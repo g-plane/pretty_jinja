@@ -1,0 +1,8 @@
+[workspace]
+resolver = "3"
+members = ["dprint_plugin", "pretty_jinja"]
+
+[profile.release]
+lto = true
+opt-level = "s"
+strip = "debuginfo"
