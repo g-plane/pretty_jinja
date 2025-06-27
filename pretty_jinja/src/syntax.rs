@@ -41,6 +41,7 @@ pub enum SyntaxKind {
     EXPR_IDENT,
     EXPR_LITERAL,
     EXPR_PAREN,
+    EXPR_PIPE,
     EXPR_UNARY,
     ROOT,
 }

@@ -140,48 +140,7 @@ fn expr_access(input: &mut Input) -> GreenResult {
                         children.push(tok(SyntaxKind::R_BRACKET, "]"));
                         (SyntaxKind::EXPR_GET_ITEM, children)
                     }),
-                (
-                    opt(whitespace),
-                    '(',
-                    repeat::<_, _, Vec<_>, _, _>(
-                        0..,
-                        (
-                            opt(whitespace),
-                            expr,
-                            alt((
-                                (opt(whitespace), ','.map(|_| tok(SyntaxKind::COMMA, ",")))
-                                    .map(Some),
-                                peek((opt(whitespace), ')')).value(None),
-                            )),
-                        ),
-                    ),
-                    opt(whitespace),
-                    ')',
-                )
-                    .map(|(ws_leading, _, args, ws_after, _)| {
-                        let mut children = Vec::with_capacity(2 + args.len() * 3);
-                        if let Some(ws) = ws_leading {
-                            children.push(ws);
-                        }
-                        children.push(tok(SyntaxKind::L_PAREN, "("));
-                        args.into_iter().for_each(|(ws_before, expr, comma)| {
-                            if let Some(ws) = ws_before {
-                                children.push(ws);
-                            }
-                            children.push(expr);
-                            if let Some((ws, comma)) = comma {
-                                if let Some(ws) = ws {
-                                    children.push(ws);
-                                }
-                                children.push(comma);
-                            }
-                        });
-                        if let Some(ws) = ws_after {
-                            children.push(ws);
-                        }
-                        children.push(tok(SyntaxKind::R_PAREN, ")"));
-                        (SyntaxKind::EXPR_CALL, children)
-                    }),
+                args.map(|args| (SyntaxKind::EXPR_CALL, args)),
             )),
         ),
     )
@@ -195,6 +154,50 @@ fn expr_access(input: &mut Input) -> GreenResult {
                     children.append(&mut elements);
                     node(kind, children)
                 })
+        })
+}
+fn args(input: &mut Input) -> winnow::Result<Vec<GreenElement>> {
+    (
+        opt(whitespace),
+        '(',
+        repeat::<_, _, Vec<_>, _, _>(
+            0..,
+            (
+                opt(whitespace),
+                expr,
+                alt((
+                    (opt(whitespace), ','.map(|_| tok(SyntaxKind::COMMA, ","))).map(Some),
+                    peek((opt(whitespace), ')')).value(None),
+                )),
+            ),
+        ),
+        opt(whitespace),
+        ')',
+    )
+        .parse_next(input)
+        .map(|(ws_leading, _, args, ws_after, _)| {
+            let mut children = Vec::with_capacity(2 + args.len() * 3);
+            if let Some(ws) = ws_leading {
+                children.push(ws);
+            }
+            children.push(tok(SyntaxKind::L_PAREN, "("));
+            args.into_iter().for_each(|(ws_before, expr, comma)| {
+                if let Some(ws) = ws_before {
+                    children.push(ws);
+                }
+                children.push(expr);
+                if let Some((ws, comma)) = comma {
+                    if let Some(ws) = ws {
+                        children.push(ws);
+                    }
+                    children.push(comma);
+                }
+            });
+            if let Some(ws) = ws_after {
+                children.push(ws);
+            }
+            children.push(tok(SyntaxKind::R_PAREN, ")"));
+            children
         })
 }
 
@@ -283,6 +286,55 @@ fn expr_literal(input: &mut Input) -> GreenResult {
         .map(|token| node(SyntaxKind::EXPR_LITERAL, [token]))
 }
 
+fn expr_pipe(input: &mut Input) -> GreenResult {
+    (
+        expr_access,
+        repeat::<_, _, Vec<_>, _, _>(
+            0..,
+            (
+                opt(whitespace),
+                '|'.map(|_| tok(SyntaxKind::OPERATOR, "|")),
+                opt(whitespace),
+                (ident, opt((opt(whitespace), args))).map(|(ident, args)| {
+                    let mut children = Vec::with_capacity(2);
+                    children.push(ident);
+                    if let Some((ws, mut args)) = args {
+                        if let Some(ws) = ws {
+                            children.push(ws);
+                        }
+                        children.append(&mut args);
+                        node(SyntaxKind::EXPR_CALL, children)
+                    } else {
+                        node(SyntaxKind::EXPR_IDENT, children)
+                    }
+                }),
+            ),
+        ),
+    )
+        .parse_next(input)
+        .map(|(base, filters)| {
+            if filters.is_empty() {
+                base
+            } else {
+                let mut children = Vec::with_capacity(1 + filters.len() * 2);
+                children.push(base);
+                filters
+                    .into_iter()
+                    .for_each(|(ws_before, operator, ws_after, filter)| {
+                        if let Some(ws) = ws_before {
+                            children.push(ws);
+                        }
+                        children.push(operator);
+                        if let Some(ws) = ws_after {
+                            children.push(ws);
+                        }
+                        children.push(filter);
+                    });
+                node(SyntaxKind::EXPR_PIPE, children)
+            }
+        })
+}
+
 fn expr_paren(input: &mut Input) -> GreenResult {
     ("(", opt(whitespace), expr, opt(whitespace), ")")
         .parse_next(input)
@@ -306,14 +358,14 @@ fn expr_term(input: &mut Input) -> GreenResult {
 }
 
 fn expr_unary(input: &mut Input) -> GreenResult {
-    alt((expr_unary_not, expr_access)).parse_next(input)
+    alt((expr_unary_not, expr_pipe)).parse_next(input)
 }
 fn expr_unary_not(input: &mut Input) -> GreenResult {
     (
         "not",
         peek(none_of(is_ident_char)),
         opt(whitespace),
-        expr_access,
+        expr_pipe,
     )
         .parse_next(input)
         .map(|(operator, _, ws, expr)| {
