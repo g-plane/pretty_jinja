@@ -96,6 +96,108 @@ fn expr(input: &mut Input) -> GreenResult {
     expr_bin.parse_next(input)
 }
 
+fn expr_access(input: &mut Input) -> GreenResult {
+    (
+        expr_term,
+        repeat::<_, _, Vec<_>, _, _>(
+            0..,
+            alt((
+                (opt(whitespace), '.', opt(whitespace), expr_term).map(
+                    |(ws_leading, _, ws, expr)| {
+                        let mut children = Vec::with_capacity(2);
+                        if let Some(ws) = ws_leading {
+                            children.push(ws);
+                        }
+                        children.push(tok(SyntaxKind::DOT, "."));
+                        if let Some(ws) = ws {
+                            children.push(ws);
+                        }
+                        children.push(expr);
+                        (SyntaxKind::EXPR_GET_ATTR, children)
+                    },
+                ),
+                (
+                    opt(whitespace),
+                    '[',
+                    opt(whitespace),
+                    expr,
+                    opt(whitespace),
+                    ']',
+                )
+                    .map(|(ws_leading, _, ws_before, expr, ws_after, _)| {
+                        let mut children = Vec::with_capacity(3);
+                        if let Some(ws) = ws_leading {
+                            children.push(ws);
+                        }
+                        children.push(tok(SyntaxKind::L_BRACKET, "["));
+                        if let Some(ws) = ws_before {
+                            children.push(ws);
+                        }
+                        children.push(expr);
+                        if let Some(ws) = ws_after {
+                            children.push(ws);
+                        }
+                        children.push(tok(SyntaxKind::R_BRACKET, "]"));
+                        (SyntaxKind::EXPR_GET_ITEM, children)
+                    }),
+                (
+                    opt(whitespace),
+                    '(',
+                    repeat::<_, _, Vec<_>, _, _>(
+                        0..,
+                        (
+                            opt(whitespace),
+                            expr,
+                            alt((
+                                (opt(whitespace), ','.map(|_| tok(SyntaxKind::COMMA, ",")))
+                                    .map(Some),
+                                peek((opt(whitespace), ')')).value(None),
+                            )),
+                        ),
+                    ),
+                    opt(whitespace),
+                    ')',
+                )
+                    .map(|(ws_leading, _, args, ws_after, _)| {
+                        let mut children = Vec::with_capacity(2 + args.len() * 3);
+                        if let Some(ws) = ws_leading {
+                            children.push(ws);
+                        }
+                        children.push(tok(SyntaxKind::L_PAREN, "("));
+                        args.into_iter().for_each(|(ws_before, expr, comma)| {
+                            if let Some(ws) = ws_before {
+                                children.push(ws);
+                            }
+                            children.push(expr);
+                            if let Some((ws, comma)) = comma {
+                                if let Some(ws) = ws {
+                                    children.push(ws);
+                                }
+                                children.push(comma);
+                            }
+                        });
+                        if let Some(ws) = ws_after {
+                            children.push(ws);
+                        }
+                        children.push(tok(SyntaxKind::R_PAREN, ")"));
+                        (SyntaxKind::EXPR_CALL, children)
+                    }),
+            )),
+        ),
+    )
+        .parse_next(input)
+        .map(|(base, accesses)| {
+            accesses
+                .into_iter()
+                .fold(base, |base, (kind, mut elements)| {
+                    let mut children = Vec::with_capacity(1 + elements.len());
+                    children.push(base);
+                    children.append(&mut elements);
+                    node(kind, children)
+                })
+        })
+}
+
 fn expr_bin(input: &mut Input) -> GreenResult {
     expr_bin_or.parse_next(input)
 }
@@ -204,14 +306,14 @@ fn expr_term(input: &mut Input) -> GreenResult {
 }
 
 fn expr_unary(input: &mut Input) -> GreenResult {
-    alt((expr_unary_not, expr_term)).parse_next(input)
+    alt((expr_unary_not, expr_access)).parse_next(input)
 }
 fn expr_unary_not(input: &mut Input) -> GreenResult {
     (
         "not",
         peek(none_of(is_ident_char)),
         opt(whitespace),
-        expr_term,
+        expr_access,
     )
         .parse_next(input)
         .map(|(operator, _, ws, expr)| {

@@ -26,11 +26,18 @@ pub enum SyntaxKind {
     STRING,
     L_PAREN,
     R_PAREN,
+    L_BRACKET,
+    R_BRACKET,
+    COMMA,
+    DOT,
     KEYWORD,
     OPERATOR,
 
     // SyntaxNode
     EXPR_BIN,
+    EXPR_CALL,
+    EXPR_GET_ATTR,
+    EXPR_GET_ITEM,
     EXPR_IDENT,
     EXPR_LITERAL,
     EXPR_PAREN,
