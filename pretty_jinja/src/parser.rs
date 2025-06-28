@@ -274,19 +274,7 @@ fn expr_bin_or(input: &mut Input) -> GreenResult {
     expr_bin_common(expr_bin_and, terminated("or", peek(none_of(is_ident_char)))).parse_next(input)
 }
 
-fn expr_ident(input: &mut Input) -> GreenResult {
-    ident
-        .parse_next(input)
-        .map(|token| node(SyntaxKind::EXPR_IDENT, [token]))
-}
-
-fn expr_literal(input: &mut Input) -> GreenResult {
-    alt((bool, number, string))
-        .parse_next(input)
-        .map(|token| node(SyntaxKind::EXPR_LITERAL, [token]))
-}
-
-fn expr_pipe(input: &mut Input) -> GreenResult {
+fn expr_filter(input: &mut Input) -> GreenResult {
     (
         expr_access,
         repeat::<_, _, Vec<_>, _, _>(
@@ -330,9 +318,21 @@ fn expr_pipe(input: &mut Input) -> GreenResult {
                         }
                         children.push(filter);
                     });
-                node(SyntaxKind::EXPR_PIPE, children)
+                node(SyntaxKind::EXPR_FILTER, children)
             }
         })
+}
+
+fn expr_ident(input: &mut Input) -> GreenResult {
+    ident
+        .parse_next(input)
+        .map(|token| node(SyntaxKind::EXPR_IDENT, [token]))
+}
+
+fn expr_literal(input: &mut Input) -> GreenResult {
+    alt((bool, number, string))
+        .parse_next(input)
+        .map(|token| node(SyntaxKind::EXPR_LITERAL, [token]))
 }
 
 fn expr_paren(input: &mut Input) -> GreenResult {
@@ -358,14 +358,14 @@ fn expr_term(input: &mut Input) -> GreenResult {
 }
 
 fn expr_unary(input: &mut Input) -> GreenResult {
-    alt((expr_unary_not, expr_pipe)).parse_next(input)
+    alt((expr_unary_not, expr_filter)).parse_next(input)
 }
 fn expr_unary_not(input: &mut Input) -> GreenResult {
     (
         "not",
         peek(none_of(is_ident_char)),
         opt(whitespace),
-        expr_pipe,
+        expr_filter,
     )
         .parse_next(input)
         .map(|(operator, _, ws, expr)| {

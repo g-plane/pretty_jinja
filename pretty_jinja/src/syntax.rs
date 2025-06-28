@@ -36,12 +36,12 @@ pub enum SyntaxKind {
     // SyntaxNode
     EXPR_BIN,
     EXPR_CALL,
+    EXPR_FILTER,
     EXPR_GET_ATTR,
     EXPR_GET_ITEM,
     EXPR_IDENT,
     EXPR_LITERAL,
     EXPR_PAREN,
-    EXPR_PIPE,
     EXPR_UNARY,
     ROOT,
 }
