@@ -36,6 +36,7 @@ pub enum SyntaxKind {
     // SyntaxNode
     EXPR_BIN,
     EXPR_CALL,
+    EXPR_CONCAT,
     EXPR_FILTER,
     EXPR_GET_ATTR,
     EXPR_GET_ITEM,

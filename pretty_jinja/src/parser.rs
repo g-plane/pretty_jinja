@@ -274,6 +274,43 @@ fn expr_bin_or(input: &mut Input) -> GreenResult {
     expr_bin_common(expr_bin_and, terminated("or", peek(none_of(is_ident_char)))).parse_next(input)
 }
 
+fn expr_concat(input: &mut Input) -> GreenResult {
+    (
+        expr_filter,
+        repeat::<_, _, Vec<_>, _, _>(
+            0..,
+            (
+                opt(whitespace),
+                '~'.map(|_| tok(SyntaxKind::OPERATOR, "~")),
+                opt(whitespace),
+                expr_filter,
+            ),
+        ),
+    )
+        .parse_next(input)
+        .map(|(base, parts)| {
+            if parts.is_empty() {
+                base
+            } else {
+                let mut children = Vec::with_capacity(1 + parts.len() * 4);
+                children.push(base);
+                parts
+                    .into_iter()
+                    .for_each(|(ws_before, operator, ws_after, part)| {
+                        if let Some(ws) = ws_before {
+                            children.push(ws);
+                        }
+                        children.push(operator);
+                        if let Some(ws) = ws_after {
+                            children.push(ws);
+                        }
+                        children.push(part);
+                    });
+                node(SyntaxKind::EXPR_CONCAT, children)
+            }
+        })
+}
+
 fn expr_filter(input: &mut Input) -> GreenResult {
     (
         expr_access,
@@ -358,14 +395,14 @@ fn expr_term(input: &mut Input) -> GreenResult {
 }
 
 fn expr_unary(input: &mut Input) -> GreenResult {
-    alt((expr_unary_not, expr_filter)).parse_next(input)
+    alt((expr_unary_not, expr_concat)).parse_next(input)
 }
 fn expr_unary_not(input: &mut Input) -> GreenResult {
     (
         "not",
         peek(none_of(is_ident_char)),
         opt(whitespace),
-        expr_filter,
+        expr_concat,
     )
         .parse_next(input)
         .map(|(operator, _, ws, expr)| {
