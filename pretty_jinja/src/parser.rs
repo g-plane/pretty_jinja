@@ -166,7 +166,7 @@ fn args(input: &mut Input) -> winnow::Result<Vec<GreenElement>> {
                 opt(whitespace),
                 expr,
                 alt((
-                    (opt(whitespace), ','.map(|_| tok(SyntaxKind::COMMA, ","))).map(Some),
+                    (opt(whitespace), ',').map(Some),
                     peek((opt(whitespace), ')')).value(None),
                 )),
             ),
@@ -186,11 +186,11 @@ fn args(input: &mut Input) -> winnow::Result<Vec<GreenElement>> {
                     children.push(ws);
                 }
                 children.push(expr);
-                if let Some((ws, comma)) = comma {
+                if let Some((ws, _)) = comma {
                     if let Some(ws) = ws {
                         children.push(ws);
                     }
-                    children.push(comma);
+                    children.push(tok(SyntaxKind::COMMA, ","));
                 }
             });
             if let Some(ws) = ws_after {
@@ -311,6 +311,63 @@ fn expr_concat(input: &mut Input) -> GreenResult {
         })
 }
 
+fn expr_dict(input: &mut Input) -> GreenResult {
+    (
+        '{',
+        repeat::<_, _, Vec<_>, _, _>(
+            0..,
+            (
+                opt(whitespace),
+                expr,
+                opt(whitespace),
+                ':',
+                opt(whitespace),
+                expr,
+                alt((
+                    (opt(whitespace), ',').map(Some),
+                    peek((opt(whitespace), '}')).value(None),
+                )),
+            ),
+        ),
+        opt(whitespace),
+        '}',
+    )
+        .parse_next(input)
+        .map(|(_, entries, ws_trailing, _)| {
+            let mut children = Vec::with_capacity(2 + entries.len() * 3);
+            children.push(tok(SyntaxKind::L_BRACE, "{"));
+            entries.into_iter().for_each(
+                |(ws_leading, key, ws_before, _, ws_after, value, comma)| {
+                    if let Some(ws) = ws_leading {
+                        children.push(ws);
+                    }
+                    let mut entry_children = Vec::with_capacity(5);
+                    entry_children.push(key);
+                    if let Some(ws) = ws_before {
+                        entry_children.push(ws);
+                    }
+                    entry_children.push(tok(SyntaxKind::COLON, ":"));
+                    if let Some(ws) = ws_after {
+                        entry_children.push(ws);
+                    }
+                    entry_children.push(value);
+                    children.push(node(SyntaxKind::EXPR_DICT_ITEM, entry_children));
+                    if let Some((ws, _)) = comma {
+                        if let Some(ws) = ws {
+                            children.push(ws);
+                        }
+                        children.push(tok(SyntaxKind::COMMA, ","));
+                    }
+                },
+            );
+            if let Some(ws) = ws_trailing {
+                children.push(ws);
+            }
+            children.push(tok(SyntaxKind::R_BRACE, "}"));
+            node(SyntaxKind::EXPR_DICT, children)
+        })
+}
+
 fn expr_filter(input: &mut Input) -> GreenResult {
     (
         expr_access,
@@ -366,6 +423,47 @@ fn expr_ident(input: &mut Input) -> GreenResult {
         .map(|token| node(SyntaxKind::EXPR_IDENT, [token]))
 }
 
+fn expr_list(input: &mut Input) -> GreenResult {
+    (
+        '[',
+        repeat::<_, _, Vec<_>, _, _>(
+            0..,
+            (
+                opt(whitespace),
+                expr,
+                alt((
+                    (opt(whitespace), ',').map(Some),
+                    peek((opt(whitespace), ']')).value(None),
+                )),
+            ),
+        ),
+        opt(whitespace),
+        ']',
+    )
+        .parse_next(input)
+        .map(|(_, elements, ws_trailing, _)| {
+            let mut children = Vec::with_capacity(2 + elements.len() * 3);
+            children.push(tok(SyntaxKind::L_BRACKET, "["));
+            elements.into_iter().for_each(|(ws_before, expr, comma)| {
+                if let Some(ws) = ws_before {
+                    children.push(ws);
+                }
+                children.push(expr);
+                if let Some((ws, _)) = comma {
+                    if let Some(ws) = ws {
+                        children.push(ws);
+                    }
+                    children.push(tok(SyntaxKind::COMMA, ","));
+                }
+            });
+            if let Some(ws) = ws_trailing {
+                children.push(ws);
+            }
+            children.push(tok(SyntaxKind::R_BRACKET, "]"));
+            node(SyntaxKind::EXPR_LIST, children)
+        })
+}
+
 fn expr_literal(input: &mut Input) -> GreenResult {
     alt((bool, number, string))
         .parse_next(input)
@@ -391,7 +489,63 @@ fn expr_paren(input: &mut Input) -> GreenResult {
 }
 
 fn expr_term(input: &mut Input) -> GreenResult {
-    alt((expr_literal, expr_ident, expr_paren)).parse_next(input)
+    alt((
+        expr_literal,
+        expr_ident,
+        expr_paren,
+        expr_list,
+        expr_dict,
+        expr_tuple,
+    ))
+    .parse_next(input)
+}
+
+fn expr_tuple(input: &mut Input) -> GreenResult {
+    (
+        '(',
+        repeat::<_, _, Vec<_>, _, _>(
+            0..,
+            (
+                opt(whitespace),
+                expr,
+                alt((
+                    (opt(whitespace), ',').map(Some),
+                    peek((opt(whitespace), ')')).value(None),
+                )),
+            ),
+        ),
+        opt(whitespace),
+        ')',
+    )
+        .verify(|(_, items, _, _)| {
+            if let Some((_, _, comma)) = items.first() {
+                comma.is_some()
+            } else {
+                true
+            }
+        })
+        .parse_next(input)
+        .map(|(_, items, ws_trailing, _)| {
+            let mut children = Vec::with_capacity(2 + items.len() * 3);
+            children.push(tok(SyntaxKind::L_PAREN, "("));
+            items.into_iter().for_each(|(ws_before, expr, comma)| {
+                if let Some(ws) = ws_before {
+                    children.push(ws);
+                }
+                children.push(expr);
+                if let Some((ws, _)) = comma {
+                    if let Some(ws) = ws {
+                        children.push(ws);
+                    }
+                    children.push(tok(SyntaxKind::COMMA, ","));
+                }
+            });
+            if let Some(ws) = ws_trailing {
+                children.push(ws);
+            }
+            children.push(tok(SyntaxKind::R_PAREN, ")"));
+            node(SyntaxKind::EXPR_TUPLE, children)
+        })
 }
 
 fn expr_unary(input: &mut Input) -> GreenResult {
