@@ -33,10 +33,12 @@ pub enum SyntaxKind {
     COLON,
     COMMA,
     DOT,
+    EQ,
     KEYWORD,
     OPERATOR,
 
     // SyntaxNode
+    ARG,
     EXPR_BIN,
     EXPR_CALL,
     EXPR_CONCAT,

@@ -164,6 +164,7 @@ fn args(input: &mut Input) -> winnow::Result<Vec<GreenElement>> {
             0..,
             (
                 opt(whitespace),
+                opt((ident, opt(whitespace), '=', opt(whitespace))),
                 expr,
                 alt((
                     (opt(whitespace), ',').map(Some),
@@ -181,11 +182,23 @@ fn args(input: &mut Input) -> winnow::Result<Vec<GreenElement>> {
                 children.push(ws);
             }
             children.push(tok(SyntaxKind::L_PAREN, "("));
-            args.into_iter().for_each(|(ws_before, expr, comma)| {
+            args.into_iter().for_each(|(ws_before, name, expr, comma)| {
                 if let Some(ws) = ws_before {
                     children.push(ws);
                 }
-                children.push(expr);
+                let mut arg_children = Vec::with_capacity(3);
+                if let Some((ident, ws_before, _, ws_after)) = name {
+                    arg_children.push(ident);
+                    if let Some(ws) = ws_before {
+                        arg_children.push(ws);
+                    }
+                    arg_children.push(tok(SyntaxKind::EQ, "="));
+                    if let Some(ws) = ws_after {
+                        arg_children.push(ws);
+                    }
+                }
+                arg_children.push(expr);
+                children.push(node(SyntaxKind::ARG, arg_children));
                 if let Some((ws, _)) = comma {
                     if let Some(ws) = ws {
                         children.push(ws);
