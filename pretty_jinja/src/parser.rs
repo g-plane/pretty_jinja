@@ -289,14 +289,14 @@ fn expr_bin_or(input: &mut Input) -> GreenResult {
 
 fn expr_concat(input: &mut Input) -> GreenResult {
     (
-        expr_filter,
+        try_expr_test,
         repeat::<_, _, Vec<_>, _, _>(
             0..,
             (
                 opt(whitespace),
                 '~'.map(|_| tok(SyntaxKind::OPERATOR, "~")),
                 opt(whitespace),
-                expr_filter,
+                try_expr_test,
             ),
         ),
     )
@@ -511,6 +511,46 @@ fn expr_term(input: &mut Input) -> GreenResult {
         expr_tuple,
     ))
     .parse_next(input)
+}
+
+fn try_expr_test(input: &mut Input) -> GreenResult {
+    (
+        expr_filter,
+        opt((
+            opt(whitespace),
+            "is",
+            opt(whitespace),
+            alt((expr_call_single_arg_for_expr_test, expr_access)),
+        )),
+    )
+        .parse_next(input)
+        .map(|(expr, test)| {
+            let mut children = Vec::with_capacity(5);
+            if let Some((ws_before, _, ws_after, test)) = test {
+                children.push(expr);
+                if let Some(ws) = ws_before {
+                    children.push(ws);
+                }
+                children.push(tok(SyntaxKind::OPERATOR, "is"));
+                if let Some(ws) = ws_after {
+                    children.push(ws);
+                }
+                children.push(test);
+                node(SyntaxKind::EXPR_TEST, children)
+            } else {
+                expr
+            }
+        })
+}
+fn expr_call_single_arg_for_expr_test(input: &mut Input) -> GreenResult {
+    (expr_term, whitespace, peek(none_of('(')), expr_access)
+        .parse_next(input)
+        .map(|(callee, ws, _, arg)| {
+            node(
+                SyntaxKind::EXPR_CALL,
+                [callee, ws, node(SyntaxKind::ARG, [arg])],
+            )
+        })
 }
 
 fn expr_tuple(input: &mut Input) -> GreenResult {

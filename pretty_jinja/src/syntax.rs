@@ -51,6 +51,7 @@ pub enum SyntaxKind {
     EXPR_LIST,
     EXPR_LITERAL,
     EXPR_PAREN,
+    EXPR_TEST,
     EXPR_TUPLE,
     EXPR_UNARY,
     ROOT,
