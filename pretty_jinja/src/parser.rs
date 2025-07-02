@@ -623,7 +623,7 @@ fn expr_unary_not(input: &mut Input) -> GreenResult {
         })
 }
 
-fn root(input: &mut Input) -> winnow::Result<GreenNode> {
+fn root_expr(input: &mut Input) -> winnow::Result<GreenNode> {
     (opt(whitespace), expr, opt(whitespace))
         .parse_next(input)
         .map(|(ws_before, expr, ws_after)| {
@@ -635,12 +635,12 @@ fn root(input: &mut Input) -> winnow::Result<GreenNode> {
             if let Some(ws) = ws_after {
                 children.push(ws);
             }
-            GreenNode::new(SyntaxKind::ROOT.into(), children)
+            GreenNode::new(SyntaxKind::ROOT_EXPR.into(), children)
         })
 }
 
 #[doc(hidden)]
-pub fn parse(code: &str) -> Result<SyntaxNode, ParseError<Input<'_>, ContextError>> {
+pub fn parse_expr(code: &str) -> Result<SyntaxNode, ParseError<Input<'_>, ContextError>> {
     let code = code.trim_start_matches('\u{feff}');
-    root.parse(code).map(SyntaxNode::new_root)
+    root_expr.parse(code).map(SyntaxNode::new_root)
 }
