@@ -4,7 +4,7 @@ pub enum JinjaLanguage {}
 impl rowan::Language for JinjaLanguage {
     type Kind = SyntaxKind;
     fn kind_from_raw(raw: rowan::SyntaxKind) -> Self::Kind {
-        assert!(raw.0 <= SyntaxKind::ROOT_EXPR as u16);
+        assert!(raw.0 <= SyntaxKind::ROOT_STMT as u16);
         unsafe { std::mem::transmute::<u16, SyntaxKind>(raw.0) }
     }
     fn kind_to_raw(kind: Self::Kind) -> rowan::SyntaxKind {
@@ -54,7 +54,9 @@ pub enum SyntaxKind {
     EXPR_TEST,
     EXPR_TUPLE,
     EXPR_UNARY,
+    STMT_UNKNOWN,
     ROOT_EXPR,
+    ROOT_STMT,
 }
 
 impl From<SyntaxKind> for rowan::SyntaxKind {

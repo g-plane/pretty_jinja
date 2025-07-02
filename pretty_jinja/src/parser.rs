@@ -644,3 +644,43 @@ pub fn parse_expr(code: &str) -> Result<SyntaxNode, ParseError<Input<'_>, Contex
     let code = code.trim_start_matches('\u{feff}');
     root_expr.parse(code).map(SyntaxNode::new_root)
 }
+
+fn stmt(input: &mut Input) -> GreenResult {
+    stmt_unknown.parse_next(input)
+}
+
+fn stmt_unknown(input: &mut Input) -> GreenResult {
+    (ident, repeat::<_, _, Vec<_>, _, _>(0.., (whitespace, expr)))
+        .parse_next(input)
+        .map(|(name, exprs)| {
+            let mut children = Vec::with_capacity(1 + exprs.len() * 2);
+            children.push(name);
+            exprs.into_iter().for_each(|(ws, expr)| {
+                children.push(ws);
+                children.push(expr);
+            });
+            node(SyntaxKind::STMT_UNKNOWN, children)
+        })
+}
+
+fn root_stmt(input: &mut Input) -> winnow::Result<GreenNode> {
+    (opt(whitespace), stmt, opt(whitespace))
+        .parse_next(input)
+        .map(|(ws_before, stmt, ws_after)| {
+            let mut children = Vec::with_capacity(3);
+            if let Some(ws) = ws_before {
+                children.push(ws);
+            }
+            children.push(stmt);
+            if let Some(ws) = ws_after {
+                children.push(ws);
+            }
+            GreenNode::new(SyntaxKind::ROOT_STMT.into(), children)
+        })
+}
+
+#[doc(hidden)]
+pub fn parse_stmt(code: &str) -> Result<SyntaxNode, ParseError<Input<'_>, ContextError>> {
+    let code = code.trim_start_matches('\u{feff}');
+    root_stmt.parse(code).map(SyntaxNode::new_root)
+}
