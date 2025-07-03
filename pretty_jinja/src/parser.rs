@@ -550,9 +550,9 @@ fn try_expr_test(input: &mut Input) -> GreenResult {
     (
         expr_filter,
         opt((
-            opt(whitespace),
+            whitespace,
             "is",
-            opt(whitespace),
+            whitespace,
             alt((expr_call_single_arg_for_expr_test, expr_access)),
         )),
     )
@@ -561,13 +561,9 @@ fn try_expr_test(input: &mut Input) -> GreenResult {
             let mut children = Vec::with_capacity(5);
             if let Some((ws_before, _, ws_after, test)) = test {
                 children.push(expr);
-                if let Some(ws) = ws_before {
-                    children.push(ws);
-                }
+                children.push(ws_before);
                 children.push(tok(SyntaxKind::OPERATOR, "is"));
-                if let Some(ws) = ws_after {
-                    children.push(ws);
-                }
+                children.push(ws_after);
                 children.push(test);
                 node(SyntaxKind::EXPR_TEST, children)
             } else {
