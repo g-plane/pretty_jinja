@@ -48,6 +48,7 @@ pub enum SyntaxKind {
     EXPR_GET_ATTR,
     EXPR_GET_ITEM,
     EXPR_IDENT,
+    EXPR_IF,
     EXPR_LIST,
     EXPR_LITERAL,
     EXPR_PAREN,

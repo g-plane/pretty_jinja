@@ -96,7 +96,7 @@ fn string(input: &mut Input) -> GreenResult {
 }
 
 fn expr(input: &mut Input) -> GreenResult {
-    expr_bin.parse_next(input)
+    try_expr_if.parse_next(input)
 }
 
 fn expr_access(input: &mut Input) -> GreenResult {
@@ -440,6 +440,33 @@ fn expr_ident(input: &mut Input) -> GreenResult {
     ident
         .parse_next(input)
         .map(|token| node(SyntaxKind::EXPR_IDENT, [token]))
+}
+
+fn try_expr_if(input: &mut Input) -> GreenResult {
+    (
+        expr_bin,
+        opt((
+            whitespace, "if", whitespace, expr_bin, whitespace, "else", whitespace, expr_bin,
+        )),
+    )
+        .parse_next(input)
+        .map(|(expr, rest)| {
+            if let Some((ws1, _, ws2, cond, ws3, _, ws4, else_expr)) = rest {
+                let mut children = vec![expr];
+                children.reserve(7);
+                children.push(ws1);
+                children.push(tok(SyntaxKind::KEYWORD, "if"));
+                children.push(ws2);
+                children.push(cond);
+                children.push(ws3);
+                children.push(tok(SyntaxKind::KEYWORD, "else"));
+                children.push(ws4);
+                children.push(else_expr);
+                node(SyntaxKind::EXPR_IF, children)
+            } else {
+                expr
+            }
+        })
 }
 
 fn expr_list(input: &mut Input) -> GreenResult {
