@@ -61,6 +61,7 @@ pub enum SyntaxKind {
     STMT_MACRO,
     STMT_SET,
     STMT_UNKNOWN,
+    STMT_WITH,
     ROOT_EXPR,
     ROOT_STMT,
 }

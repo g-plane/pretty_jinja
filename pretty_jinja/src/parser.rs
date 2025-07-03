@@ -658,6 +658,7 @@ fn stmt(input: &mut Input) -> GreenResult {
         stmt_call,
         stmt_set,
         stmt_filter,
+        stmt_with,
         stmt_unknown,
     ))
     .parse_next(input)
@@ -915,6 +916,47 @@ fn stmt_unknown(input: &mut Input) -> GreenResult {
                 children.push(expr);
             });
             node(SyntaxKind::STMT_UNKNOWN, children)
+        })
+}
+
+fn stmt_with(input: &mut Input) -> GreenResult {
+    (
+        "with",
+        whitespace,
+        ident,
+        repeat::<_, _, Vec<_>, _, _>(0.., (opt(whitespace), ',', opt(whitespace), ident)),
+        opt(whitespace),
+        '=',
+        opt(whitespace),
+        expr,
+    )
+        .parse_next(input)
+        .map(|(_, ws1, fst_name, names, ws2, _, ws3, expr)| {
+            let mut children = Vec::with_capacity(7);
+            children.push(tok(SyntaxKind::KEYWORD, "set"));
+            children.push(ws1);
+            children.push(fst_name);
+            names
+                .into_iter()
+                .for_each(|(ws_before, _, ws_after, ident)| {
+                    if let Some(ws) = ws_before {
+                        children.push(ws);
+                    }
+                    children.push(tok(SyntaxKind::COMMA, ","));
+                    if let Some(ws) = ws_after {
+                        children.push(ws);
+                    }
+                    children.push(ident);
+                });
+            if let Some(ws) = ws2 {
+                children.push(ws);
+            }
+            children.push(tok(SyntaxKind::EQ, "="));
+            if let Some(ws) = ws3 {
+                children.push(ws);
+            }
+            children.push(expr);
+            node(SyntaxKind::STMT_WITH, children)
         })
 }
 
