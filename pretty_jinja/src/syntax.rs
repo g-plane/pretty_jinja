@@ -56,6 +56,7 @@ pub enum SyntaxKind {
     EXPR_UNARY,
     PARAM,
     STMT_CALL,
+    STMT_FILTER,
     STMT_FOR,
     STMT_MACRO,
     STMT_UNKNOWN,
