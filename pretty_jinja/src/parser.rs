@@ -649,7 +649,7 @@ pub fn parse_expr(code: &str) -> Result<SyntaxNode, ParseError<Input<'_>, Contex
 }
 
 fn stmt(input: &mut Input) -> GreenResult {
-    alt((stmt_for, stmt_unknown)).parse_next(input)
+    alt((stmt_for, stmt_macro, stmt_unknown)).parse_next(input)
 }
 
 fn stmt_for(input: &mut Input) -> GreenResult {
@@ -707,6 +707,75 @@ fn stmt_for(input: &mut Input) -> GreenResult {
                 node(SyntaxKind::STMT_FOR, children)
             },
         )
+}
+
+fn stmt_macro(input: &mut Input) -> GreenResult {
+    (
+        "macro",
+        whitespace,
+        ident,
+        opt(whitespace),
+        '(',
+        repeat::<_, _, Vec<_>, _, _>(
+            0..,
+            (
+                opt(whitespace),
+                param,
+                alt((
+                    (opt(whitespace), ',').map(Some),
+                    peek((opt(whitespace), ')')).value(None),
+                )),
+            ),
+        ),
+        opt(whitespace),
+        ')',
+    )
+        .parse_next(input)
+        .map(|(_, ws1, name, ws2, _, params, ws3, _)| {
+            let mut children = Vec::with_capacity(5 + params.len() * 3);
+            children.push(tok(SyntaxKind::KEYWORD, "macro"));
+            children.push(ws1);
+            children.push(name);
+            if let Some(ws) = ws2 {
+                children.push(ws);
+            }
+            children.push(tok(SyntaxKind::L_PAREN, "("));
+            params.into_iter().for_each(|(ws, param, comma)| {
+                if let Some(ws) = ws {
+                    children.push(ws);
+                }
+                children.push(param);
+                if let Some((ws, _)) = comma {
+                    if let Some(ws) = ws {
+                        children.push(ws);
+                    }
+                    children.push(tok(SyntaxKind::COMMA, ","));
+                }
+            });
+            if let Some(ws) = ws3 {
+                children.push(ws);
+            }
+            children.push(tok(SyntaxKind::R_PAREN, ")"));
+            node(SyntaxKind::STMT_MACRO, children)
+        })
+}
+fn param(input: &mut Input) -> GreenResult {
+    (ident, opt((opt(whitespace), '=', opt(whitespace), expr)))
+        .parse_next(input)
+        .map(|(name, value)| {
+            let mut children = vec![name];
+            if let Some((ws_before, _, ws_after, expr)) = value {
+                if let Some(ws) = ws_before {
+                    children.push(ws);
+                }
+                children.push(tok(SyntaxKind::EQ, "="));
+                if let Some(ws) = ws_after {
+                    children.push(ws);
+                }
+                children.push(expr);
+            }
+            node(SyntaxKind::PARAM, children)
+        })
 }
 
 fn stmt_unknown(input: &mut Input) -> GreenResult {
