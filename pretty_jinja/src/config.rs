@@ -74,10 +74,24 @@ impl From<LayoutOptions> for tiny_pretty::PrintOptions {
 #[cfg_attr(feature = "config_serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "config_serde", serde(default))]
 /// Configuration related to syntax.
-pub struct LanguageOptions {}
+pub struct LanguageOptions {
+    #[cfg_attr(feature = "config_serde", serde(alias = "operatorLineBreak"))]
+    pub operator_linebreak: OperatorLineBreak,
+}
 
 impl Default for LanguageOptions {
     fn default() -> Self {
-        Self {}
+        Self {
+            operator_linebreak: OperatorLineBreak::default(),
+        }
     }
+}
+
+#[derive(Clone, Debug, Default)]
+#[cfg_attr(feature = "config_serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "config_serde", serde(rename_all = "kebab-case"))]
+pub enum OperatorLineBreak {
+    Before,
+    #[default]
+    After,
 }
