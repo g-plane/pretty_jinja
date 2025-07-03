@@ -27,7 +27,7 @@ fn print_node(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
         SyntaxKind::EXPR_CONCAT => todo!(),
         SyntaxKind::EXPR_DICT => todo!(),
         SyntaxKind::EXPR_DICT_ITEM => todo!(),
-        SyntaxKind::EXPR_FILTER => todo!(),
+        SyntaxKind::EXPR_FILTER => print_expr_filter(node, ctx),
         SyntaxKind::EXPR_GET_ATTR => print_expr_get(node, ctx),
         SyntaxKind::EXPR_GET_ITEM => print_expr_get(node, ctx),
         SyntaxKind::EXPR_IDENT => print_expr_ident(node),
@@ -53,34 +53,7 @@ fn print_node(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
 }
 
 fn print_expr_bin(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
-    use crate::config::OperatorLineBreak;
-
-    let doc = Doc::list(
-        node.children_with_tokens()
-            .filter(|element| element.kind() != SyntaxKind::WHITESPACE)
-            .map(|element| match element {
-                NodeOrToken::Node(node) => print_node(&node, ctx),
-                NodeOrToken::Token(token) if token.kind() == SyntaxKind::OPERATOR => {
-                    let (prefix, suffix) = match ctx.options.operator_linebreak {
-                        OperatorLineBreak::Before => {
-                            (Doc::line_or_space().nest(ctx.indent_width), Doc::space())
-                        }
-                        OperatorLineBreak::After => {
-                            (Doc::space(), Doc::line_or_space().nest(ctx.indent_width))
-                        }
-                    };
-                    if token.kind() == SyntaxKind::OPERATOR {
-                        prefix
-                            .append(Doc::text(token.text().to_string()))
-                            .append(suffix)
-                    } else {
-                        Doc::text(token.text().to_string())
-                    }
-                }
-                NodeOrToken::Token(token) => Doc::text(token.text().to_string()),
-            })
-            .collect(),
-    );
+    let doc = print_expr_with_operator(node, ctx);
     if node
         .parent()
         .is_some_and(|node| node.kind() == SyntaxKind::EXPR_BIN)
@@ -89,6 +62,10 @@ fn print_expr_bin(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     } else {
         doc.group()
     }
+}
+
+fn print_expr_filter(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+    print_expr_with_operator(node, ctx).group()
 }
 
 fn print_expr_get(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
@@ -127,8 +104,38 @@ fn print_expr_paren(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     )
 }
 
+fn print_expr_with_operator(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+    Doc::list(
+        node.children_with_tokens()
+            .filter(|element| element.kind() != SyntaxKind::WHITESPACE)
+            .map(|element| match element {
+                NodeOrToken::Node(node) => print_node(&node, ctx),
+                NodeOrToken::Token(token) if token.kind() == SyntaxKind::OPERATOR => {
+                    let (prefix, suffix) = get_operator_space(ctx);
+                    if token.kind() == SyntaxKind::OPERATOR {
+                        prefix
+                            .append(Doc::text(token.text().to_string()))
+                            .append(suffix)
+                    } else {
+                        Doc::text(token.text().to_string())
+                    }
+                }
+                NodeOrToken::Token(token) => Doc::text(token.text().to_string()),
+            })
+            .collect(),
+    )
+}
+
 fn print_root_expr(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     node.first_child()
         .map(|child| print_node(&child, ctx))
         .unwrap_or_else(Doc::nil)
+}
+
+fn get_operator_space(ctx: &Ctx) -> (Doc<'static>, Doc<'static>) {
+    use crate::config::OperatorLineBreak;
+    match ctx.options.operator_linebreak {
+        OperatorLineBreak::Before => (Doc::line_or_space().nest(ctx.indent_width), Doc::space()),
+        OperatorLineBreak::After => (Doc::space(), Doc::line_or_space().nest(ctx.indent_width)),
+    }
 }
