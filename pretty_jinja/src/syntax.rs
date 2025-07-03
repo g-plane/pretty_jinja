@@ -54,6 +54,7 @@ pub enum SyntaxKind {
     EXPR_TEST,
     EXPR_TUPLE,
     EXPR_UNARY,
+    STMT_FOR,
     STMT_UNKNOWN,
     ROOT_EXPR,
     ROOT_STMT,

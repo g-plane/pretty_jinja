@@ -42,13 +42,16 @@ fn bool(input: &mut Input) -> GreenResult {
 }
 
 fn ident(input: &mut Input) -> GreenResult {
+    word.parse_next(input)
+        .map(|text| tok(SyntaxKind::IDENT, text))
+}
+fn word<'s>(input: &mut Input<'s>) -> winnow::Result<&'s str> {
     (
         one_of(|c: char| c.is_ascii_alphabetic() || c == '_' || !c.is_ascii()),
         take_while(0.., is_ident_char),
     )
         .take()
         .parse_next(input)
-        .map(|text| tok(SyntaxKind::IDENT, text))
 }
 
 fn number(input: &mut Input) -> GreenResult {
@@ -646,15 +649,72 @@ pub fn parse_expr(code: &str) -> Result<SyntaxNode, ParseError<Input<'_>, Contex
 }
 
 fn stmt(input: &mut Input) -> GreenResult {
-    stmt_unknown.parse_next(input)
+    alt((stmt_for, stmt_unknown)).parse_next(input)
+}
+
+fn stmt_for(input: &mut Input) -> GreenResult {
+    (
+        "for",
+        whitespace,
+        ident,
+        repeat::<_, _, Vec<_>, _, _>(0.., (opt(whitespace), ',', opt(whitespace), ident)),
+        whitespace,
+        "in",
+        whitespace,
+        expr,
+        opt((
+            whitespace,
+            alt((
+                ("if", whitespace, expr).map(|(_, ws, expr)| {
+                    let mut children = Vec::with_capacity(3);
+                    children.push(tok(SyntaxKind::KEYWORD, "if"));
+                    children.push(ws);
+                    children.push(expr);
+                    children
+                }),
+                word.verify(|text: &str| text == "recursive")
+                    .map(|text| vec![tok(SyntaxKind::KEYWORD, text)]),
+            )),
+        )),
+    )
+        .parse_next(input)
+        .map(
+            |(_, ws1, fst_binding, rest_bindings, ws2, _, ws3, expr, extra)| {
+                let mut children = Vec::with_capacity(7 + rest_bindings.len() * 3);
+                children.push(tok(SyntaxKind::KEYWORD, "for"));
+                children.push(ws1);
+                children.push(fst_binding);
+                rest_bindings
+                    .into_iter()
+                    .for_each(|(ws_before, _, ws_after, ident)| {
+                        if let Some(ws) = ws_before {
+                            children.push(ws);
+                        }
+                        children.push(tok(SyntaxKind::COMMA, ","));
+                        if let Some(ws) = ws_after {
+                            children.push(ws);
+                        }
+                        children.push(ident);
+                    });
+                children.push(ws2);
+                children.push(tok(SyntaxKind::KEYWORD, "in"));
+                children.push(ws3);
+                children.push(expr);
+                if let Some((ws, mut extra)) = extra {
+                    children.push(ws);
+                    children.append(&mut extra);
+                }
+                node(SyntaxKind::STMT_FOR, children)
+            },
+        )
 }
 
 fn stmt_unknown(input: &mut Input) -> GreenResult {
-    (ident, repeat::<_, _, Vec<_>, _, _>(0.., (whitespace, expr)))
+    (word, repeat::<_, _, Vec<_>, _, _>(0.., (whitespace, expr)))
         .parse_next(input)
         .map(|(name, exprs)| {
             let mut children = Vec::with_capacity(1 + exprs.len() * 2);
-            children.push(name);
+            children.push(tok(SyntaxKind::KEYWORD, name));
             exprs.into_iter().for_each(|(ws, expr)| {
                 children.push(ws);
                 children.push(expr);
