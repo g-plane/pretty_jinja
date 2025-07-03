@@ -2,3 +2,5 @@
 dprint_plugin/deployment/plugin.wasm
 dprint_plugin/deployment/npm/plugin.wasm
 docs/book
+/config.json
+/*.jinja

@@ -1,6 +1,6 @@
 use crate::config::FormatOptions;
 
-mod config;
+pub mod config;
 mod parser;
 mod printer;
 mod syntax;
