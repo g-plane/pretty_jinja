@@ -649,7 +649,72 @@ pub fn parse_expr(code: &str) -> Result<SyntaxNode, ParseError<Input<'_>, Contex
 }
 
 fn stmt(input: &mut Input) -> GreenResult {
-    alt((stmt_for, stmt_macro, stmt_unknown)).parse_next(input)
+    alt((stmt_for, stmt_macro, stmt_call, stmt_unknown)).parse_next(input)
+}
+
+fn stmt_call(input: &mut Input) -> GreenResult {
+    (
+        "call",
+        alt((
+            (
+                opt(whitespace),
+                '(',
+                repeat::<_, _, Vec<_>, _, _>(
+                    0..,
+                    (
+                        opt(whitespace),
+                        ident,
+                        alt((
+                            (opt(whitespace), ',').map(Some),
+                            peek((opt(whitespace), ')')).value(None),
+                        )),
+                    ),
+                ),
+                opt(whitespace),
+                ')',
+                opt(whitespace),
+            )
+                .map(|(ws1, _, names, ws2, _, ws3)| {
+                    let mut children = Vec::with_capacity(3 + names.len() * 3);
+                    if let Some(ws) = ws1 {
+                        children.push(ws);
+                    }
+                    children.push(tok(SyntaxKind::L_PAREN, "("));
+                    names.into_iter().for_each(|(ws_before, ident, comma)| {
+                        if let Some(ws) = ws_before {
+                            children.push(ws);
+                        }
+                        children.push(node(SyntaxKind::PARAM, [ident]));
+                        if let Some((ws, _)) = comma {
+                            if let Some(ws) = ws {
+                                children.push(ws);
+                            }
+                            children.push(tok(SyntaxKind::COMMA, ","));
+                        }
+                    });
+                    if let Some(ws) = ws2 {
+                        children.push(ws);
+                    }
+                    children.push(tok(SyntaxKind::R_PAREN, ")"));
+                    if let Some(ws) = ws3 {
+                        children.push(ws);
+                    }
+                    children
+                }),
+            whitespace.map(|ws| vec![ws]),
+        )),
+        ident,
+        args,
+    )
+        .parse_next(input)
+        .map(|(_, mut params, name, mut args)| {
+            let mut children = Vec::with_capacity(2 + params.len() + args.len());
+            children.push(tok(SyntaxKind::KEYWORD, "call"));
+            children.append(&mut params);
+            children.push(name);
+            children.append(&mut args);
+            node(SyntaxKind::STMT_CALL, children)
+        })
 }
 
 fn stmt_for(input: &mut Input) -> GreenResult {
