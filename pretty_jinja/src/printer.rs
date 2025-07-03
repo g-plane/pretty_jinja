@@ -34,7 +34,7 @@ fn print_node(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
         SyntaxKind::EXPR_IF => todo!(),
         SyntaxKind::EXPR_LIST => todo!(),
         SyntaxKind::EXPR_LITERAL => print_expr_literal(node, ctx),
-        SyntaxKind::EXPR_PAREN => todo!(),
+        SyntaxKind::EXPR_PAREN => print_expr_paren(node, ctx),
         SyntaxKind::EXPR_TEST => todo!(),
         SyntaxKind::EXPR_TUPLE => todo!(),
         SyntaxKind::EXPR_UNARY => todo!(),
@@ -113,6 +113,18 @@ fn print_expr_literal(node: &SyntaxNode, _: &Ctx) -> Doc<'static> {
     node.first_token()
         .map(|token| Doc::text(token.text().to_string()))
         .unwrap_or_else(Doc::nil)
+}
+
+fn print_expr_paren(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+    Doc::list(
+        node.children_with_tokens()
+            .filter(|element| element.kind() != SyntaxKind::WHITESPACE)
+            .map(|element| match element {
+                NodeOrToken::Node(node) => print_node(&node, ctx),
+                NodeOrToken::Token(token) => Doc::text(token.text().to_string()),
+            })
+            .collect(),
+    )
 }
 
 fn print_root_expr(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
