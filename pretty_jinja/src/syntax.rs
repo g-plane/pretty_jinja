@@ -59,6 +59,7 @@ pub enum SyntaxKind {
     STMT_FILTER,
     STMT_FOR,
     STMT_MACRO,
+    STMT_SET,
     STMT_UNKNOWN,
     ROOT_EXPR,
     ROOT_STMT,

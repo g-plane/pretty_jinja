@@ -385,52 +385,55 @@ fn expr_dict(input: &mut Input) -> GreenResult {
 }
 
 fn expr_filter(input: &mut Input) -> GreenResult {
-    (
-        expr_access,
-        repeat::<_, _, Vec<_>, _, _>(
-            0..,
-            (
-                opt(whitespace),
-                '|'.map(|_| tok(SyntaxKind::OPERATOR, "|")),
-                opt(whitespace),
-                (ident, opt((opt(whitespace), args))).map(|(ident, args)| {
-                    let mut children = Vec::with_capacity(2);
-                    children.push(ident);
-                    if let Some((ws, mut args)) = args {
-                        if let Some(ws) = ws {
-                            children.push(ws);
-                        }
-                        children.append(&mut args);
-                        node(SyntaxKind::EXPR_CALL, children)
-                    } else {
-                        node(SyntaxKind::EXPR_IDENT, children)
-                    }
-                }),
-            ),
-        ),
-    )
+    (expr_access, filters())
         .parse_next(input)
-        .map(|(base, filters)| {
+        .map(|(base, mut filters)| {
             if filters.is_empty() {
                 base
             } else {
                 let mut children = Vec::with_capacity(1 + filters.len() * 2);
                 children.push(base);
-                filters
-                    .into_iter()
-                    .for_each(|(ws_before, operator, ws_after, filter)| {
-                        if let Some(ws) = ws_before {
-                            children.push(ws);
-                        }
-                        children.push(operator);
-                        if let Some(ws) = ws_after {
-                            children.push(ws);
-                        }
-                        children.push(filter);
-                    });
+                children.append(&mut filters);
                 node(SyntaxKind::EXPR_FILTER, children)
             }
         })
+}
+fn filters<'s>() -> impl Parser<Input<'s>, Vec<GreenElement>, ContextError> {
+    repeat(
+        0..,
+        (
+            opt(whitespace),
+            '|'.map(|_| tok(SyntaxKind::OPERATOR, "|")),
+            opt(whitespace),
+            (ident, opt((opt(whitespace), args))).map(|(ident, args)| {
+                let mut children = Vec::with_capacity(2);
+                children.push(ident);
+                if let Some((ws, mut args)) = args {
+                    if let Some(ws) = ws {
+                        children.push(ws);
+                    }
+                    children.append(&mut args);
+                    node(SyntaxKind::EXPR_CALL, children)
+                } else {
+                    node(SyntaxKind::EXPR_IDENT, children)
+                }
+            }),
+        ),
+    )
+    .fold(
+        Vec::new,
+        |mut children, (ws_before, operator, ws_after, filter)| {
+            if let Some(ws) = ws_before {
+                children.push(ws);
+            }
+            children.push(operator);
+            if let Some(ws) = ws_after {
+                children.push(ws);
+            }
+            children.push(filter);
+            children
+        },
+    )
 }
 
 fn expr_ident(input: &mut Input) -> GreenResult {
@@ -649,7 +652,15 @@ pub fn parse_expr(code: &str) -> Result<SyntaxNode, ParseError<Input<'_>, Contex
 }
 
 fn stmt(input: &mut Input) -> GreenResult {
-    alt((stmt_for, stmt_macro, stmt_call, stmt_filter, stmt_unknown)).parse_next(input)
+    alt((
+        stmt_for,
+        stmt_macro,
+        stmt_call,
+        stmt_set,
+        stmt_filter,
+        stmt_unknown,
+    ))
+    .parse_next(input)
 }
 
 fn stmt_call(input: &mut Input) -> GreenResult {
@@ -846,6 +857,51 @@ fn stmt_for(input: &mut Input) -> GreenResult {
 
 fn stmt_macro(input: &mut Input) -> GreenResult {
     stmt_fn_def_like("macro", SyntaxKind::STMT_MACRO).parse_next(input)
+}
+
+fn stmt_set(input: &mut Input) -> GreenResult {
+    (
+        "set",
+        whitespace,
+        ident,
+        repeat::<_, _, Vec<_>, _, _>(0.., (opt(whitespace), ',', opt(whitespace), ident)),
+        alt((
+            (opt(whitespace), '=', opt(whitespace), expr).map(|(ws_before, _, ws_after, expr)| {
+                let mut children = Vec::with_capacity(4);
+                if let Some(ws) = ws_before {
+                    children.push(ws);
+                }
+                children.push(tok(SyntaxKind::EQ, "="));
+                if let Some(ws) = ws_after {
+                    children.push(ws);
+                }
+                children.push(expr);
+                children
+            }),
+            filters(),
+        )),
+    )
+        .parse_next(input)
+        .map(|(_, ws1, fst_name, names, mut rest)| {
+            let mut children = Vec::with_capacity(3 + names.len() * 3 + rest.len());
+            children.push(tok(SyntaxKind::KEYWORD, "set"));
+            children.push(ws1);
+            children.push(fst_name);
+            names
+                .into_iter()
+                .for_each(|(ws_before, _, ws_after, ident)| {
+                    if let Some(ws) = ws_before {
+                        children.push(ws);
+                    }
+                    children.push(tok(SyntaxKind::COMMA, ","));
+                    if let Some(ws) = ws_after {
+                        children.push(ws);
+                    }
+                    children.push(ident);
+                });
+            children.append(&mut rest);
+            node(SyntaxKind::STMT_SET, children)
+        })
 }
 
 fn stmt_unknown(input: &mut Input) -> GreenResult {
