@@ -28,8 +28,8 @@ fn print_node(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
         SyntaxKind::EXPR_DICT => todo!(),
         SyntaxKind::EXPR_DICT_ITEM => todo!(),
         SyntaxKind::EXPR_FILTER => todo!(),
-        SyntaxKind::EXPR_GET_ATTR => todo!(),
-        SyntaxKind::EXPR_GET_ITEM => todo!(),
+        SyntaxKind::EXPR_GET_ATTR => print_expr_get(node, ctx),
+        SyntaxKind::EXPR_GET_ITEM => print_expr_get(node, ctx),
         SyntaxKind::EXPR_IDENT => print_expr_ident(node),
         SyntaxKind::EXPR_IF => todo!(),
         SyntaxKind::EXPR_LIST => todo!(),
@@ -52,18 +52,6 @@ fn print_node(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     }
 }
 
-fn print_expr_ident(node: &SyntaxNode) -> Doc<'static> {
-    node.first_token()
-        .map(|token| Doc::text(token.text().to_string()))
-        .unwrap_or_else(Doc::nil)
-}
-
-fn print_expr_literal(node: &SyntaxNode, _: &Ctx) -> Doc<'static> {
-    node.first_token()
-        .map(|token| Doc::text(token.text().to_string()))
-        .unwrap_or_else(Doc::nil)
-}
-
 fn print_expr_bin(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     Doc::list(
         node.children_with_tokens()
@@ -82,6 +70,30 @@ fn print_expr_bin(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
             })
             .collect(),
     )
+}
+
+fn print_expr_get(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+    Doc::list(
+        node.children_with_tokens()
+            .filter(|element| element.kind() != SyntaxKind::WHITESPACE)
+            .map(|element| match element {
+                NodeOrToken::Node(node) => print_node(&node, ctx),
+                NodeOrToken::Token(token) => Doc::text(token.text().to_string()),
+            })
+            .collect(),
+    )
+}
+
+fn print_expr_ident(node: &SyntaxNode) -> Doc<'static> {
+    node.first_token()
+        .map(|token| Doc::text(token.text().to_string()))
+        .unwrap_or_else(Doc::nil)
+}
+
+fn print_expr_literal(node: &SyntaxNode, _: &Ctx) -> Doc<'static> {
+    node.first_token()
+        .map(|token| Doc::text(token.text().to_string()))
+        .unwrap_or_else(Doc::nil)
 }
 
 fn print_root_expr(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
