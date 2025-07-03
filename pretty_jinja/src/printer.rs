@@ -24,7 +24,7 @@ fn print_node(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
         SyntaxKind::ARG => todo!(),
         SyntaxKind::EXPR_BIN => print_expr_bin(node, ctx),
         SyntaxKind::EXPR_CALL => todo!(),
-        SyntaxKind::EXPR_CONCAT => todo!(),
+        SyntaxKind::EXPR_CONCAT => print_expr_concat(node, ctx),
         SyntaxKind::EXPR_DICT => todo!(),
         SyntaxKind::EXPR_DICT_ITEM => todo!(),
         SyntaxKind::EXPR_FILTER => print_expr_filter(node, ctx),
@@ -62,6 +62,10 @@ fn print_expr_bin(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     } else {
         doc.group()
     }
+}
+
+fn print_expr_concat(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+    print_expr_with_operator(node, ctx).group()
 }
 
 fn print_expr_filter(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
