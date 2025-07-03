@@ -274,7 +274,7 @@ fn expr_bin_cmp(input: &mut Input) -> GreenResult {
             "!=",
             ('>', opt('=')).take(),
             ('<', opt('=')).take(),
-            "in",
+            terminated("in", peek(none_of(is_ident_char))),
         )),
     )
     .parse_next(input)
@@ -906,14 +906,23 @@ fn stmt_set(input: &mut Input) -> GreenResult {
 }
 
 fn stmt_unknown(input: &mut Input) -> GreenResult {
-    (word, repeat::<_, _, Vec<_>, _, _>(0.., (whitespace, expr)))
+    (
+        word,
+        repeat::<_, _, Vec<_>, _, _>(0.., (whitespace, expr, opt((opt(whitespace), ',')))),
+    )
         .parse_next(input)
         .map(|(name, exprs)| {
             let mut children = Vec::with_capacity(1 + exprs.len() * 2);
             children.push(tok(SyntaxKind::KEYWORD, name));
-            exprs.into_iter().for_each(|(ws, expr)| {
+            exprs.into_iter().for_each(|(ws, expr, comma)| {
                 children.push(ws);
                 children.push(expr);
+                if let Some((ws, _)) = comma {
+                    if let Some(ws) = ws {
+                        children.push(ws);
+                    }
+                    children.push(tok(SyntaxKind::COMMA, ","));
+                }
             });
             node(SyntaxKind::STMT_UNKNOWN, children)
         })
