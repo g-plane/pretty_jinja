@@ -1,6 +1,5 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[doc(hidden)]
-pub enum JinjaLanguage {}
+pub(crate) enum JinjaLanguage {}
 impl rowan::Language for JinjaLanguage {
     type Kind = SyntaxKind;
     fn kind_from_raw(raw: rowan::SyntaxKind) -> Self::Kind {
@@ -13,11 +12,10 @@ impl rowan::Language for JinjaLanguage {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[doc(hidden)]
 #[allow(non_camel_case_types)]
 #[allow(clippy::upper_case_acronyms)]
 #[repr(u16)]
-pub enum SyntaxKind {
+pub(crate) enum SyntaxKind {
     // SyntaxToken
     WHITESPACE = 0,
     BOOL,
@@ -72,3 +70,7 @@ impl From<SyntaxKind> for rowan::SyntaxKind {
         Self(kind as u16)
     }
 }
+
+pub(crate) type SyntaxNode = rowan::SyntaxNode<JinjaLanguage>;
+pub(crate) type SyntaxToken = rowan::SyntaxToken<JinjaLanguage>;
+pub(crate) type NodeOrToken = rowan::NodeOrToken<SyntaxNode, SyntaxToken>;

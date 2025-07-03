@@ -672,8 +672,7 @@ fn root_expr(input: &mut Input) -> winnow::Result<GreenNode> {
         })
 }
 
-#[doc(hidden)]
-pub fn parse_expr(code: &str) -> Result<SyntaxNode, ParseError<Input<'_>, ContextError>> {
+pub(crate) fn parse_expr(code: &str) -> Result<SyntaxNode, ParseError<Input<'_>, ContextError>> {
     let code = code.trim_start_matches('\u{feff}');
     root_expr.parse(code).map(SyntaxNode::new_root)
 }
@@ -1012,8 +1011,7 @@ fn root_stmt(input: &mut Input) -> winnow::Result<GreenNode> {
         })
 }
 
-#[doc(hidden)]
-pub fn parse_stmt(code: &str) -> Result<SyntaxNode, ParseError<Input<'_>, ContextError>> {
+pub(crate) fn parse_stmt(code: &str) -> Result<SyntaxNode, ParseError<Input<'_>, ContextError>> {
     let code = code.trim_start_matches('\u{feff}');
     root_stmt.parse(code).map(SyntaxNode::new_root)
 }
