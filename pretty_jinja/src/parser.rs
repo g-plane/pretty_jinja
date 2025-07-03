@@ -730,13 +730,8 @@ fn stmt_for(input: &mut Input) -> GreenResult {
         opt((
             whitespace,
             alt((
-                ("if", whitespace, expr).map(|(_, ws, expr)| {
-                    let mut children = Vec::with_capacity(3);
-                    children.push(tok(SyntaxKind::KEYWORD, "if"));
-                    children.push(ws);
-                    children.push(expr);
-                    children
-                }),
+                ("if", whitespace, expr)
+                    .map(|(_, ws, expr)| vec![tok(SyntaxKind::KEYWORD, "if"), ws, expr]),
                 word.verify(|text: &str| text == "recursive")
                     .map(|text| vec![tok(SyntaxKind::KEYWORD, text)]),
             )),
