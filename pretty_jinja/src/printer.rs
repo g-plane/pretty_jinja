@@ -31,7 +31,7 @@ fn print_node(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
         SyntaxKind::EXPR_GET_ATTR => print_expr_get(node, ctx),
         SyntaxKind::EXPR_GET_ITEM => print_expr_get(node, ctx),
         SyntaxKind::EXPR_IDENT => print_expr_ident(node),
-        SyntaxKind::EXPR_IF => todo!(),
+        SyntaxKind::EXPR_IF => print_expr_if(node, ctx),
         SyntaxKind::EXPR_LIST => print_expr_list(node, ctx),
         SyntaxKind::EXPR_LITERAL => print_expr_literal(node, ctx),
         SyntaxKind::EXPR_PAREN => print_expr_paren(node, ctx),
@@ -121,6 +121,26 @@ fn print_expr_ident(node: &SyntaxNode) -> Doc<'static> {
     node.first_token()
         .map(|token| Doc::text(token.text().to_string()))
         .unwrap_or_else(Doc::nil)
+}
+
+fn print_expr_if(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+    Doc::list(
+        node.children_with_tokens()
+            .filter(|node_or_token| node_or_token.kind() != SyntaxKind::WHITESPACE)
+            .map(|node_or_token| match node_or_token {
+                NodeOrToken::Node(node) => print_node(&node, ctx),
+                NodeOrToken::Token(token) => {
+                    if token.kind() == SyntaxKind::KEYWORD {
+                        Doc::line_or_space()
+                            .append(Doc::text(token.text().to_string()).append(Doc::space()))
+                    } else {
+                        Doc::text(token.text().to_string())
+                    }
+                }
+            })
+            .collect(),
+    )
+    .group()
 }
 
 fn print_expr_list(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
