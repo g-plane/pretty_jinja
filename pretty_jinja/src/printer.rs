@@ -37,7 +37,7 @@ fn print_node(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
         SyntaxKind::EXPR_PAREN => print_expr_paren(node, ctx),
         SyntaxKind::EXPR_TEST => todo!(),
         SyntaxKind::EXPR_TUPLE => print_expr_tuple(node, ctx),
-        SyntaxKind::EXPR_UNARY => todo!(),
+        SyntaxKind::EXPR_UNARY => print_expr_unary(node, ctx),
         SyntaxKind::PARAM => todo!(),
         SyntaxKind::STMT_CALL => todo!(),
         SyntaxKind::STMT_FILTER => todo!(),
@@ -155,15 +155,33 @@ fn print_expr_tuple(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     )
 }
 
+fn print_expr_unary(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+    Doc::list(
+        node.children_with_tokens()
+            .filter(|element| element.kind() != SyntaxKind::WHITESPACE)
+            .map(|element| match element {
+                NodeOrToken::Node(node) => print_node(&node, ctx),
+                NodeOrToken::Token(token) => {
+                    if token.kind() == SyntaxKind::OPERATOR {
+                        Doc::text(token.text().to_string()).append(Doc::space())
+                    } else {
+                        Doc::text(token.text().to_string())
+                    }
+                }
+            })
+            .collect(),
+    )
+}
+
 fn print_expr_with_operator(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     Doc::list(
         node.children_with_tokens()
             .filter(|element| element.kind() != SyntaxKind::WHITESPACE)
             .map(|element| match element {
                 NodeOrToken::Node(node) => print_node(&node, ctx),
-                NodeOrToken::Token(token) if token.kind() == SyntaxKind::OPERATOR => {
-                    let (prefix, suffix) = get_operator_space(ctx);
+                NodeOrToken::Token(token) => {
                     if token.kind() == SyntaxKind::OPERATOR {
+                        let (prefix, suffix) = get_operator_space(ctx);
                         prefix
                             .append(Doc::text(token.text().to_string()))
                             .append(suffix)
@@ -171,7 +189,6 @@ fn print_expr_with_operator(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
                         Doc::text(token.text().to_string())
                     }
                 }
-                NodeOrToken::Token(token) => Doc::text(token.text().to_string()),
             })
             .collect(),
     )
