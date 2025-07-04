@@ -53,15 +53,7 @@ fn print_node(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
 }
 
 fn print_arg(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
-    Doc::list(
-        node.children_with_tokens()
-            .filter(|element| element.kind() != SyntaxKind::WHITESPACE)
-            .map(|element| match element {
-                NodeOrToken::Node(node) => print_node(&node, ctx),
-                NodeOrToken::Token(token) => Doc::text(token.text().to_string()),
-            })
-            .collect(),
-    )
+    print_without_whitespaces(node, ctx)
 }
 
 fn print_expr_bin(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
@@ -122,15 +114,7 @@ fn print_expr_filter(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
 }
 
 fn print_expr_get(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
-    Doc::list(
-        node.children_with_tokens()
-            .filter(|element| element.kind() != SyntaxKind::WHITESPACE)
-            .map(|element| match element {
-                NodeOrToken::Node(node) => print_node(&node, ctx),
-                NodeOrToken::Token(token) => Doc::text(token.text().to_string()),
-            })
-            .collect(),
-    )
+    print_without_whitespaces(node, ctx)
 }
 
 fn print_expr_ident(node: &SyntaxNode) -> Doc<'static> {
@@ -156,15 +140,7 @@ fn print_expr_literal(node: &SyntaxNode, _: &Ctx) -> Doc<'static> {
 }
 
 fn print_expr_paren(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
-    Doc::list(
-        node.children_with_tokens()
-            .filter(|element| element.kind() != SyntaxKind::WHITESPACE)
-            .map(|element| match element {
-                NodeOrToken::Node(node) => print_node(&node, ctx),
-                NodeOrToken::Token(token) => Doc::text(token.text().to_string()),
-            })
-            .collect(),
-    )
+    print_without_whitespaces(node, ctx)
 }
 
 fn print_expr_test(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
@@ -228,6 +204,18 @@ fn print_root_expr(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     node.first_child()
         .map(|child| print_node(&child, ctx))
         .unwrap_or_else(Doc::nil)
+}
+
+fn print_without_whitespaces(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+    Doc::list(
+        node.children_with_tokens()
+            .filter(|element| element.kind() != SyntaxKind::WHITESPACE)
+            .map(|element| match element {
+                NodeOrToken::Node(node) => print_node(&node, ctx),
+                NodeOrToken::Token(token) => Doc::text(token.text().to_string()),
+            })
+            .collect(),
+    )
 }
 
 fn print_comma_separated_with_delimiter(
