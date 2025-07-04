@@ -35,7 +35,7 @@ fn print_node(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
         SyntaxKind::EXPR_LIST => print_expr_list(node, ctx),
         SyntaxKind::EXPR_LITERAL => print_expr_literal(node, ctx),
         SyntaxKind::EXPR_PAREN => print_expr_paren(node, ctx),
-        SyntaxKind::EXPR_TEST => todo!(),
+        SyntaxKind::EXPR_TEST => print_expr_test(node, ctx),
         SyntaxKind::EXPR_TUPLE => print_expr_tuple(node, ctx),
         SyntaxKind::EXPR_UNARY => print_expr_unary(node, ctx),
         SyntaxKind::PARAM => todo!(),
@@ -139,6 +139,10 @@ fn print_expr_paren(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
             })
             .collect(),
     )
+}
+
+fn print_expr_test(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+    print_expr_with_operator(node, ctx).group()
 }
 
 fn print_expr_tuple(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
