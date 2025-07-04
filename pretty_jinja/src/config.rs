@@ -85,6 +85,14 @@ pub struct LanguageOptions {
         serde(rename = "expr_list.trailing_comma", alias = "exprList.trailingComma")
     )]
     pub expr_list_trailing_comma: Option<TrailingComma>,
+    #[cfg_attr(
+        feature = "config_serde",
+        serde(
+            rename = "expr_tuple.trailing_comma",
+            alias = "exprTuple.trailingComma"
+        )
+    )]
+    pub expr_tuple_trailing_comma: Option<TrailingComma>,
 
     #[cfg_attr(feature = "config_serde", serde(alias = "preferSingleLine"))]
     pub prefer_single_line: bool,
@@ -96,9 +104,20 @@ pub struct LanguageOptions {
         )
     )]
     pub expr_list_prefer_single_line: Option<bool>,
+    #[cfg_attr(
+        feature = "config_serde",
+        serde(
+            rename = "expr_tuple.prefer_single_line",
+            alias = "exprTuple.preferSingleLine"
+        )
+    )]
+    pub expr_tuple_prefer_single_line: Option<bool>,
 
     #[cfg_attr(feature = "config_serde", serde(alias = "bracketSpacing"))]
     pub bracket_spacing: bool,
+
+    #[cfg_attr(feature = "config_serde", serde(alias = "tupleParenSpacing"))]
+    pub tuple_paren_spacing: bool,
 }
 
 impl Default for LanguageOptions {
@@ -107,9 +126,12 @@ impl Default for LanguageOptions {
             operator_linebreak: OperatorLineBreak::default(),
             trailing_comma: TrailingComma::default(),
             expr_list_trailing_comma: None,
+            expr_tuple_trailing_comma: None,
             prefer_single_line: false,
             expr_list_prefer_single_line: None,
+            expr_tuple_prefer_single_line: None,
             bracket_spacing: false,
+            tuple_paren_spacing: false,
         }
     }
 }

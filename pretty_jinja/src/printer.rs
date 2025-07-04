@@ -1,5 +1,5 @@
 use crate::{
-    config::{FormatOptions, LanguageOptions},
+    config::{FormatOptions, LanguageOptions, TrailingComma},
     syntax::{NodeOrToken, SyntaxKind, SyntaxNode},
 };
 use tiny_pretty::Doc;
@@ -36,7 +36,7 @@ fn print_node(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
         SyntaxKind::EXPR_LITERAL => print_expr_literal(node, ctx),
         SyntaxKind::EXPR_PAREN => print_expr_paren(node, ctx),
         SyntaxKind::EXPR_TEST => todo!(),
-        SyntaxKind::EXPR_TUPLE => todo!(),
+        SyntaxKind::EXPR_TUPLE => print_expr_tuple(node, ctx),
         SyntaxKind::EXPR_UNARY => todo!(),
         SyntaxKind::PARAM => todo!(),
         SyntaxKind::STMT_CALL => todo!(),
@@ -118,6 +118,20 @@ fn print_expr_paren(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     )
 }
 
+fn print_expr_tuple(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+    print_comma_separated_with_delimiter(
+        node,
+        ctx,
+        if node.children().count() == 1 {
+            Some(TrailingComma::Always)
+        } else {
+            ctx.options.expr_tuple_trailing_comma
+        },
+        ctx.options.expr_tuple_prefer_single_line,
+        ctx.options.tuple_paren_spacing,
+    )
+}
+
 fn print_expr_with_operator(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     Doc::list(
         node.children_with_tokens()
@@ -149,12 +163,10 @@ fn print_root_expr(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
 fn print_comma_separated_with_delimiter(
     node: &SyntaxNode,
     ctx: &Ctx,
-    trailing_comma: Option<crate::config::TrailingComma>,
+    trailing_comma: Option<TrailingComma>,
     prefer_single_line: Option<bool>,
     delim_spacing: bool,
 ) -> Doc<'static> {
-    use crate::config::TrailingComma;
-
     Doc::list(
         node.children_with_tokens()
             .filter(|element| element.kind() != SyntaxKind::WHITESPACE)
