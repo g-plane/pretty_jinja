@@ -25,8 +25,8 @@ fn print_node(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
         SyntaxKind::EXPR_BIN => print_expr_bin(node, ctx),
         SyntaxKind::EXPR_CALL => todo!(),
         SyntaxKind::EXPR_CONCAT => print_expr_concat(node, ctx),
-        SyntaxKind::EXPR_DICT => todo!(),
-        SyntaxKind::EXPR_DICT_ITEM => todo!(),
+        SyntaxKind::EXPR_DICT => print_dict(node, ctx),
+        SyntaxKind::EXPR_DICT_ITEM => print_dict_item(node, ctx),
         SyntaxKind::EXPR_FILTER => print_expr_filter(node, ctx),
         SyntaxKind::EXPR_GET_ATTR => print_expr_get(node, ctx),
         SyntaxKind::EXPR_GET_ITEM => print_expr_get(node, ctx),
@@ -66,6 +66,29 @@ fn print_expr_bin(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
 
 fn print_expr_concat(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     print_expr_with_operator(node, ctx).group()
+}
+
+fn print_dict(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+    print_comma_separated_with_delimiter(
+        node,
+        ctx,
+        ctx.options.expr_dict_trailing_comma,
+        ctx.options.expr_dict_prefer_single_line,
+        ctx.options.brace_spacing,
+    )
+}
+
+fn print_dict_item(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+    Doc::list(
+        node.children_with_tokens()
+            .filter(|element| element.kind() != SyntaxKind::WHITESPACE)
+            .map(|element| match element {
+                NodeOrToken::Node(node) => print_node(&node, ctx),
+                NodeOrToken::Token(token) if token.kind() == SyntaxKind::COLON => Doc::text(": "),
+                NodeOrToken::Token(token) => Doc::text(token.text().to_string()),
+            })
+            .collect(),
+    )
 }
 
 fn print_expr_filter(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
