@@ -77,21 +77,58 @@ impl From<LayoutOptions> for tiny_pretty::PrintOptions {
 pub struct LanguageOptions {
     #[cfg_attr(feature = "config_serde", serde(alias = "operatorLineBreak"))]
     pub operator_linebreak: OperatorLineBreak,
+
+    #[cfg_attr(feature = "config_serde", serde(alias = "trailingComma"))]
+    pub trailing_comma: TrailingComma,
+    #[cfg_attr(
+        feature = "config_serde",
+        serde(rename = "expr_list.trailing_comma", alias = "exprList.trailingComma")
+    )]
+    pub expr_list_trailing_comma: Option<TrailingComma>,
+
+    #[cfg_attr(feature = "config_serde", serde(alias = "preferSingleLine"))]
+    pub prefer_single_line: bool,
+    #[cfg_attr(
+        feature = "config_serde",
+        serde(
+            rename = "expr_list.prefer_single_line",
+            alias = "exprList.preferSingleLine"
+        )
+    )]
+    pub expr_list_prefer_single_line: Option<bool>,
+
+    #[cfg_attr(feature = "config_serde", serde(alias = "bracketSpacing"))]
+    pub bracket_spacing: bool,
 }
 
 impl Default for LanguageOptions {
     fn default() -> Self {
         Self {
             operator_linebreak: OperatorLineBreak::default(),
+            trailing_comma: TrailingComma::default(),
+            expr_list_trailing_comma: None,
+            prefer_single_line: false,
+            expr_list_prefer_single_line: None,
+            bracket_spacing: false,
         }
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 #[cfg_attr(feature = "config_serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "config_serde", serde(rename_all = "kebab-case"))]
 pub enum OperatorLineBreak {
     Before,
     #[default]
     After,
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+#[cfg_attr(feature = "config_serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "config_serde", serde(rename_all = "kebab-case"))]
+pub enum TrailingComma {
+    Never,
+    Always,
+    #[default]
+    OnlyMultiLine,
 }
