@@ -99,8 +99,8 @@ fn print_expr_dict(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
 fn print_expr_dict_item(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     Doc::list(
         node.children_with_tokens()
-            .filter(|element| element.kind() != SyntaxKind::WHITESPACE)
-            .map(|element| match element {
+            .filter(|node_or_token| node_or_token.kind() != SyntaxKind::WHITESPACE)
+            .map(|node_or_token| match node_or_token {
                 NodeOrToken::Node(node) => print_node(&node, ctx),
                 NodeOrToken::Token(token) if token.kind() == SyntaxKind::COLON => Doc::text(": "),
                 NodeOrToken::Token(token) => Doc::text(token.text().to_string()),
@@ -164,8 +164,8 @@ fn print_expr_tuple(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
 fn print_expr_unary(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     Doc::list(
         node.children_with_tokens()
-            .filter(|element| element.kind() != SyntaxKind::WHITESPACE)
-            .map(|element| match element {
+            .filter(|node_or_token| node_or_token.kind() != SyntaxKind::WHITESPACE)
+            .map(|node_or_token| match node_or_token {
                 NodeOrToken::Node(node) => print_node(&node, ctx),
                 NodeOrToken::Token(token) => {
                     if token.kind() == SyntaxKind::OPERATOR {
@@ -182,8 +182,8 @@ fn print_expr_unary(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
 fn print_expr_with_operator(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     Doc::list(
         node.children_with_tokens()
-            .filter(|element| element.kind() != SyntaxKind::WHITESPACE)
-            .map(|element| match element {
+            .filter(|node_or_token| node_or_token.kind() != SyntaxKind::WHITESPACE)
+            .map(|node_or_token| match node_or_token {
                 NodeOrToken::Node(node) => print_node(&node, ctx),
                 NodeOrToken::Token(token) => {
                     if token.kind() == SyntaxKind::OPERATOR {
@@ -209,8 +209,8 @@ fn print_root_expr(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
 fn print_without_whitespaces(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     Doc::list(
         node.children_with_tokens()
-            .filter(|element| element.kind() != SyntaxKind::WHITESPACE)
-            .map(|element| match element {
+            .filter(|node_or_token| node_or_token.kind() != SyntaxKind::WHITESPACE)
+            .map(|node_or_token| match node_or_token {
                 NodeOrToken::Node(node) => print_node(&node, ctx),
                 NodeOrToken::Token(token) => Doc::text(token.text().to_string()),
             })
@@ -227,8 +227,8 @@ fn print_comma_separated_with_delimiter(
 ) -> Doc<'static> {
     Doc::list(
         elements
-            .filter(|element| element.kind() != SyntaxKind::WHITESPACE)
-            .map(|element| match element {
+            .filter(|node_or_token| node_or_token.kind() != SyntaxKind::WHITESPACE)
+            .map(|node_or_token| match node_or_token {
                 NodeOrToken::Node(child) => {
                     let doc = print_node(&child, ctx);
                     let doc = if child.next_sibling().is_some() {
