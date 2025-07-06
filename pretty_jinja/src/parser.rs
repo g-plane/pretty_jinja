@@ -969,7 +969,7 @@ fn stmt_with(input: &mut Input) -> GreenResult {
         .parse_next(input)
         .map(|(_, ws1, fst_name, names, ws2, _, ws3, expr)| {
             let mut children = Vec::with_capacity(7);
-            children.push(tok(SyntaxKind::KEYWORD, "set"));
+            children.push(tok(SyntaxKind::KEYWORD, "with"));
             children.push(ws1);
             children.push(fst_name);
             names
