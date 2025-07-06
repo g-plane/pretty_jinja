@@ -2,6 +2,7 @@ use crate::{
     config::{FormatOptions, LanguageOptions, TrailingComma},
     syntax::{NodeOrToken, SyntaxKind, SyntaxNode},
 };
+use rowan::ast::support;
 use tiny_pretty::Doc;
 
 pub(crate) fn format(node: &SyntaxNode, options: &FormatOptions) -> Doc<'static> {
@@ -38,16 +39,16 @@ fn print_node(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
         SyntaxKind::EXPR_TEST => print_expr_test(node, ctx),
         SyntaxKind::EXPR_TUPLE => print_expr_tuple(node, ctx),
         SyntaxKind::EXPR_UNARY => print_expr_unary(node, ctx),
-        SyntaxKind::PARAM => todo!(),
+        SyntaxKind::PARAM => print_param(node, ctx),
         SyntaxKind::STMT_CALL => todo!(),
-        SyntaxKind::STMT_FILTER => todo!(),
+        SyntaxKind::STMT_FILTER => print_stmt_filter(node, ctx),
         SyntaxKind::STMT_FOR => todo!(),
-        SyntaxKind::STMT_MACRO => todo!(),
+        SyntaxKind::STMT_MACRO => print_stmt_macro(node, ctx),
         SyntaxKind::STMT_SET => todo!(),
         SyntaxKind::STMT_UNKNOWN => todo!(),
         SyntaxKind::STMT_WITH => todo!(),
-        SyntaxKind::ROOT_EXPR => print_root_expr(node, ctx),
-        SyntaxKind::ROOT_STMT => todo!(),
+        SyntaxKind::ROOT_EXPR => print_root(node, ctx),
+        SyntaxKind::ROOT_STMT => print_root(node, ctx),
         _ => unreachable!("only syntax node is expected"),
     }
 }
@@ -220,10 +221,48 @@ fn print_expr_with_operator(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     )
 }
 
-fn print_root_expr(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+fn print_param(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+    print_without_whitespaces(node, ctx)
+}
+
+fn print_root(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     node.first_child()
         .map(|child| print_node(&child, ctx))
         .unwrap_or_else(Doc::nil)
+}
+
+fn print_stmt_filter(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+    Doc::text("filter ")
+        .append(
+            support::token(node, SyntaxKind::IDENT)
+                .map(|token| Doc::text(token.text().to_string()))
+                .unwrap_or_else(Doc::nil),
+        )
+        .append(print_comma_separated_with_delimiter(
+            node.children_with_tokens()
+                .skip_while(|node_or_token| node_or_token.kind() != SyntaxKind::L_PAREN),
+            ctx,
+            ctx.options.params_trailing_comma,
+            ctx.options.params_prefer_single_line,
+            ctx.options.params_paren_spacing,
+        ))
+}
+
+fn print_stmt_macro(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+    Doc::text("macro ")
+        .append(
+            support::token(node, SyntaxKind::IDENT)
+                .map(|token| Doc::text(token.text().to_string()))
+                .unwrap_or_else(Doc::nil),
+        )
+        .append(print_comma_separated_with_delimiter(
+            node.children_with_tokens()
+                .skip_while(|node_or_token| node_or_token.kind() != SyntaxKind::L_PAREN),
+            ctx,
+            ctx.options.params_trailing_comma,
+            ctx.options.params_prefer_single_line,
+            ctx.options.params_paren_spacing,
+        ))
 }
 
 fn print_without_whitespaces(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
