@@ -46,7 +46,7 @@ fn print_node(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
         SyntaxKind::STMT_MACRO => print_stmt_macro(node, ctx),
         SyntaxKind::STMT_SET => print_stmt_set(node, ctx),
         SyntaxKind::STMT_UNKNOWN => todo!(),
-        SyntaxKind::STMT_WITH => todo!(),
+        SyntaxKind::STMT_WITH => print_stmt_with(node, ctx),
         SyntaxKind::ROOT_EXPR => print_root(node, ctx),
         SyntaxKind::ROOT_STMT => print_root(node, ctx),
         _ => unreachable!("only syntax node is expected"),
@@ -289,6 +289,25 @@ fn print_stmt_set(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
             .collect(),
     )
     .group()
+}
+
+fn print_stmt_with(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+    Doc::list(
+        node.children_with_tokens()
+            .filter(|node_or_token| node_or_token.kind() != SyntaxKind::WHITESPACE)
+            .map(|node_or_token| match node_or_token {
+                NodeOrToken::Node(node) => print_node(&node, ctx),
+                NodeOrToken::Token(token) => match token.kind() {
+                    SyntaxKind::KEYWORD => Doc::text(token.text().to_string()).append(Doc::space()),
+                    SyntaxKind::EQ => Doc::space()
+                        .append(Doc::text(token.text().to_string()))
+                        .append(Doc::space()),
+                    SyntaxKind::COMMA => Doc::text(token.text().to_string()).append(Doc::space()),
+                    _ => Doc::text(token.text().to_string()),
+                },
+            })
+            .collect(),
+    )
 }
 
 fn print_without_whitespaces(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
