@@ -276,6 +276,7 @@ fn print_stmt_set(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
                     SyntaxKind::EQ => Doc::space()
                         .append(Doc::text(token.text().to_string()))
                         .append(Doc::space()),
+                    SyntaxKind::COMMA => Doc::text(token.text().to_string()).append(Doc::space()),
                     SyntaxKind::OPERATOR => {
                         let (prefix, suffix) = get_operator_space(ctx);
                         prefix
