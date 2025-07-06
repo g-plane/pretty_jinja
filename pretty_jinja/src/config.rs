@@ -82,6 +82,11 @@ pub struct LanguageOptions {
     pub trailing_comma: TrailingComma,
     #[cfg_attr(
         feature = "config_serde",
+        serde(rename = "args.trailing_comma", alias = "args.trailingComma")
+    )]
+    pub args_trailing_comma: Option<TrailingComma>,
+    #[cfg_attr(
+        feature = "config_serde",
         serde(rename = "expr_dict.trailing_comma", alias = "exprDict.trailingComma")
     )]
     pub expr_dict_trailing_comma: Option<TrailingComma>,
@@ -106,6 +111,11 @@ pub struct LanguageOptions {
 
     #[cfg_attr(feature = "config_serde", serde(alias = "preferSingleLine"))]
     pub prefer_single_line: bool,
+    #[cfg_attr(
+        feature = "config_serde",
+        serde(rename = "args.prefer_single_line", alias = "args.preferSingleLine")
+    )]
+    pub args_prefer_single_line: Option<bool>,
     #[cfg_attr(
         feature = "config_serde",
         serde(
@@ -145,6 +155,9 @@ pub struct LanguageOptions {
     #[cfg_attr(feature = "config_serde", serde(alias = "bracketSpacing"))]
     pub bracket_spacing: bool,
 
+    #[cfg_attr(feature = "config_serde", serde(alias = "argsParenSpacing"))]
+    pub args_paren_spacing: bool,
+
     #[cfg_attr(feature = "config_serde", serde(alias = "paramsParenSpacing"))]
     pub params_paren_spacing: bool,
 
@@ -157,17 +170,20 @@ impl Default for LanguageOptions {
         Self {
             operator_linebreak: OperatorLineBreak::default(),
             trailing_comma: TrailingComma::default(),
+            args_trailing_comma: None,
             expr_dict_trailing_comma: None,
             expr_list_trailing_comma: None,
             expr_tuple_trailing_comma: None,
             params_trailing_comma: None,
             prefer_single_line: false,
+            args_prefer_single_line: None,
             expr_dict_prefer_single_line: None,
             expr_list_prefer_single_line: None,
             expr_tuple_prefer_single_line: None,
             params_prefer_single_line: None,
             brace_spacing: false,
             bracket_spacing: false,
+            args_paren_spacing: false,
             params_paren_spacing: false,
             tuple_paren_spacing: false,
         }

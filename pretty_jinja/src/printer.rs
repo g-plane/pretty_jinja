@@ -77,9 +77,9 @@ fn print_expr_call(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
             node.children_with_tokens()
                 .skip_while(|node_or_token| node_or_token.kind() != SyntaxKind::L_PAREN),
             ctx,
-            None,
-            None,
-            false,
+            ctx.options.args_trailing_comma,
+            ctx.options.args_prefer_single_line,
+            ctx.options.args_paren_spacing,
         ))
 }
 
