@@ -2,7 +2,7 @@ use crate::{
     config::{FormatOptions, LanguageOptions, TrailingComma},
     syntax::{NodeOrToken, SyntaxKind, SyntaxNode},
 };
-use rowan::ast::support;
+use rowan::{Direction, ast::support};
 use tiny_pretty::Doc;
 
 pub(crate) fn format(node: &SyntaxNode, options: &FormatOptions) -> Doc<'static> {
@@ -45,7 +45,7 @@ fn print_node(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
         SyntaxKind::STMT_FOR => todo!(),
         SyntaxKind::STMT_MACRO => print_stmt_macro(node, ctx),
         SyntaxKind::STMT_SET => print_stmt_set(node, ctx),
-        SyntaxKind::STMT_UNKNOWN => todo!(),
+        SyntaxKind::STMT_UNKNOWN => print_stmt_unknown(node, ctx),
         SyntaxKind::STMT_WITH => print_stmt_with(node, ctx),
         SyntaxKind::ROOT_EXPR => print_root(node, ctx),
         SyntaxKind::ROOT_STMT => print_root(node, ctx),
@@ -289,6 +289,35 @@ fn print_stmt_set(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
             .collect(),
     )
     .group()
+}
+
+fn print_stmt_unknown(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+    Doc::list(
+        node.children_with_tokens()
+            .filter(|node_or_token| node_or_token.kind() != SyntaxKind::WHITESPACE)
+            .map(|node_or_token| match node_or_token {
+                NodeOrToken::Node(node) => {
+                    let doc = print_node(&node, ctx);
+                    if node
+                        .siblings_with_tokens(Direction::Next)
+                        .skip(1)
+                        .find(|node_or_token| node_or_token.kind() != SyntaxKind::WHITESPACE)
+                        .is_some_and(|node_or_token| matches!(node_or_token, NodeOrToken::Node(..)))
+                    {
+                        doc.append(Doc::space())
+                    } else {
+                        doc
+                    }
+                }
+                NodeOrToken::Token(token) => match token.kind() {
+                    SyntaxKind::KEYWORD | SyntaxKind::COMMA => {
+                        Doc::text(token.text().to_string()).append(Doc::space())
+                    }
+                    _ => Doc::text(token.text().to_string()),
+                },
+            })
+            .collect(),
+    )
 }
 
 fn print_stmt_with(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
