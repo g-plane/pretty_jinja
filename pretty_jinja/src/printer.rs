@@ -23,6 +23,7 @@ struct Ctx<'b> {
 fn print_node(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     match node.kind() {
         SyntaxKind::ARG => print_arg(node, ctx),
+        SyntaxKind::CALL_PARAMS => print_call_params(node, ctx),
         SyntaxKind::EXPR_BIN => print_expr_bin(node, ctx),
         SyntaxKind::EXPR_CALL => print_expr_call(node, ctx),
         SyntaxKind::EXPR_CONCAT => print_expr_concat(node, ctx),
@@ -40,7 +41,7 @@ fn print_node(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
         SyntaxKind::EXPR_TUPLE => print_expr_tuple(node, ctx),
         SyntaxKind::EXPR_UNARY => print_expr_unary(node, ctx),
         SyntaxKind::PARAM => print_param(node, ctx),
-        SyntaxKind::STMT_CALL => todo!(),
+        SyntaxKind::STMT_CALL => print_stmt_call(node, ctx),
         SyntaxKind::STMT_FILTER => print_stmt_filter(node, ctx),
         SyntaxKind::STMT_FOR => print_stmt_for(node, ctx),
         SyntaxKind::STMT_MACRO => print_stmt_macro(node, ctx),
@@ -55,6 +56,16 @@ fn print_node(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
 
 fn print_arg(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     print_without_whitespaces(node, ctx)
+}
+
+fn print_call_params(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+    print_comma_separated_with_delimiter(
+        node.children_with_tokens(),
+        ctx,
+        ctx.options.params_trailing_comma,
+        ctx.options.params_prefer_single_line,
+        ctx.options.params_paren_spacing,
+    )
 }
 
 fn print_expr_bin(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
@@ -229,6 +240,29 @@ fn print_root(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
     node.first_child()
         .map(|child| print_node(&child, ctx))
         .unwrap_or_else(Doc::nil)
+}
+
+fn print_stmt_call(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+    Doc::text("call")
+        .append(
+            node.first_child_by_kind(&|kind| kind == SyntaxKind::CALL_PARAMS)
+                .map(|node| print_call_params(&node, ctx))
+                .unwrap_or_else(Doc::nil),
+        )
+        .append(Doc::space())
+        .append(
+            support::token(node, SyntaxKind::IDENT)
+                .map(|token| Doc::text(token.text().to_string()))
+                .unwrap_or_else(Doc::nil),
+        )
+        .append(print_comma_separated_with_delimiter(
+            node.children_with_tokens()
+                .skip_while(|node_or_token| node_or_token.kind() != SyntaxKind::L_PAREN),
+            ctx,
+            ctx.options.args_trailing_comma,
+            ctx.options.args_prefer_single_line,
+            ctx.options.args_paren_spacing,
+        ))
 }
 
 fn print_stmt_filter(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {

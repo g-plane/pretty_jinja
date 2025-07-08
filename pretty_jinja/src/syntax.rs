@@ -37,6 +37,7 @@ pub(crate) enum SyntaxKind {
 
     // SyntaxNode
     ARG,
+    CALL_PARAMS,
     EXPR_BIN,
     EXPR_CALL,
     EXPR_CONCAT,

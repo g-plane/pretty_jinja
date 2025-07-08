@@ -714,27 +714,29 @@ fn stmt_call(input: &mut Input) -> GreenResult {
                 opt(whitespace),
             )
                 .map(|(ws1, _, names, ws2, _, ws3)| {
-                    let mut children = Vec::with_capacity(3 + names.len() * 3);
+                    let mut children = Vec::with_capacity(3);
                     if let Some(ws) = ws1 {
                         children.push(ws);
                     }
-                    children.push(tok(SyntaxKind::L_PAREN, "("));
+                    let mut params_children = Vec::with_capacity(1 + names.len() * 3);
+                    params_children.push(tok(SyntaxKind::L_PAREN, "("));
                     names.into_iter().for_each(|(ws_before, ident, comma)| {
                         if let Some(ws) = ws_before {
-                            children.push(ws);
+                            params_children.push(ws);
                         }
-                        children.push(node(SyntaxKind::PARAM, [ident]));
+                        params_children.push(node(SyntaxKind::PARAM, [ident]));
                         if let Some((ws, _)) = comma {
                             if let Some(ws) = ws {
-                                children.push(ws);
+                                params_children.push(ws);
                             }
-                            children.push(tok(SyntaxKind::COMMA, ","));
+                            params_children.push(tok(SyntaxKind::COMMA, ","));
                         }
                     });
                     if let Some(ws) = ws2 {
-                        children.push(ws);
+                        params_children.push(ws);
                     }
-                    children.push(tok(SyntaxKind::R_PAREN, ")"));
+                    params_children.push(tok(SyntaxKind::R_PAREN, ")"));
+                    children.push(node(SyntaxKind::CALL_PARAMS, params_children));
                     if let Some(ws) = ws3 {
                         children.push(ws);
                     }
