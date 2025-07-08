@@ -70,7 +70,7 @@ impl From<LayoutOptions> for tiny_pretty::PrintOptions {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 #[cfg_attr(feature = "config_serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "config_serde", serde(default))]
 /// Configuration related to syntax.
@@ -163,31 +163,6 @@ pub struct LanguageOptions {
 
     #[cfg_attr(feature = "config_serde", serde(alias = "tupleParenSpacing"))]
     pub tuple_paren_spacing: bool,
-}
-
-impl Default for LanguageOptions {
-    fn default() -> Self {
-        Self {
-            operator_linebreak: OperatorLineBreak::default(),
-            trailing_comma: TrailingComma::default(),
-            args_trailing_comma: None,
-            expr_dict_trailing_comma: None,
-            expr_list_trailing_comma: None,
-            expr_tuple_trailing_comma: None,
-            params_trailing_comma: None,
-            prefer_single_line: false,
-            args_prefer_single_line: None,
-            expr_dict_prefer_single_line: None,
-            expr_list_prefer_single_line: None,
-            expr_tuple_prefer_single_line: None,
-            params_prefer_single_line: None,
-            brace_spacing: false,
-            bracket_spacing: false,
-            args_paren_spacing: false,
-            params_paren_spacing: false,
-            tuple_paren_spacing: false,
-        }
-    }
 }
 
 #[derive(Clone, Copy, Debug, Default)]

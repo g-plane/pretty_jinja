@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://plugins.dprint.dev/g-plane/pretty_jinja/v0.0.0/schema.json",
+  "title": "Config",
+  "description": "Configuration for dprint-plugin-jinja.",
+  "type": "object",
+  "definitions": {
+    "trailingComma": {
+      "description": "Control whether trailing comma should be inserted or not.",
+      "type": "boolean",
+      "oneOf": [
+        {
+          "const": "never",
+          "description": "Do not insert trailing comma."
+        },
+        {
+          "const": "always",
+          "description": "Always insert trailing comma."
+        },
+        {
+          "const": "only-multi-line",
+          "description": "Insert trailing comma when it lays as multiple lines, and do not insert trailing comma if it's single line."
+        }
+      ]
+    },
+    "preferSingleLine": {
+      "description": "Control whether items should be placed on single line as possible, even they're originally on multiple lines.",
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "properties": {
+    "printWidth": {
+      "description": "The line width limitation that Pretty Jinja should *(but not must)* avoid exceeding. Pretty Jinja will try its best to keep line width less than this value, but it may exceed for some cases, for example, a very very long single word.",
+      "type": "integer",
+      "default": 80,
+      "minimum": 0
+    },
+    "useTabs": {
+      "description": "Specify use space or tab for indentation.",
+      "type": "boolean",
+      "default": false
+    },
+    "indentWidth": {
+      "description": "Size of indentation. When enabled `useTabs`, this option may be disregarded, since only one tab will be inserted when indented once.",
+      "type": "integer",
+      "default": 2,
+      "minimum": 0
+    },
+    "lineBreak": {
+      "description": "Specify whether use `\\n` (LF) or `\\r\\n` (CRLF) for line break.",
+      "type": "string",
+      "enum": ["lf", "crlf"],
+      "default": "lf"
+    },
+    "operatorLineBreak": {
+      "description": "Control whether line break should come before or after operators.",
+      "type": "string",
+      "oneOf": [
+        {
+          "const": "before",
+          "description": "Line break will come before operators."
+        },
+        {
+          "const": "after",
+          "description": "Line break will come after operators."
+        }
+      ],
+      "default": "after"
+    },
+    "trailingComma": {
+      "$ref": "#/definitions/trailingComma",
+      "default": "only-multi-line"
+    },
+    "args.trailingComma": {
+      "$ref": "#/definitions/trailingComma",
+      "default": null
+    },
+    "exprDict.trailingComma": {
+      "$ref": "#/definitions/trailingComma",
+      "default": null
+    },
+    "exprList.trailingComma": {
+      "$ref": "#/definitions/trailingComma",
+      "default": null
+    },
+    "exprTuple.trailingComma": {
+      "$ref": "#/definitions/trailingComma",
+      "default": null
+    },
+    "params.trailingComma": {
+      "$ref": "#/definitions/trailingComma",
+      "default": null
+    },
+    "preferSingleLine": {
+      "$ref": "#/definitions/preferSingleLine",
+      "default": false
+    },
+    "args.preferSingleLine": {
+      "$ref": "#/definitions/preferSingleLine",
+      "default": null
+    },
+    "exprDict.preferSingleLine": {
+      "$ref": "#/definitions/preferSingleLine",
+      "default": null
+    },
+    "exprList.preferSingleLine": {
+      "$ref": "#/definitions/preferSingleLine",
+      "default": null
+    },
+    "exprTuple.preferSingleLine": {
+      "$ref": "#/definitions/preferSingleLine",
+      "default": null
+    },
+    "params.preferSingleLine": {
+      "$ref": "#/definitions/preferSingleLine",
+      "default": null
+    },
+    "braceSpacing": {
+      "description": "Control whether whitespace should be inserted between braces or not.",
+      "type": "boolean",
+      "default": false
+    },
+    "bracketSpacing": {
+      "description": "Control whether whitespace should be inserted between brackets or not.",
+      "type": "boolean",
+      "default": false
+    },
+    "argsParenSpacing": {
+      "description": "Control whether whitespace should be inserted between parentheses of arguments or not.",
+      "type": "boolean",
+      "default": false
+    },
+    "paramsParenSpacing": {
+      "description": "Control whether whitespace should be inserted between parentheses of parameters or not.",
+      "type": "boolean",
+      "default": false
+    },
+    "tupleParenSpacing": {
+      "description": "Control whether whitespace should be inserted between parentheses of tuple or not.",
+      "type": "boolean",
+      "default": false
+    }
+  }
+}
