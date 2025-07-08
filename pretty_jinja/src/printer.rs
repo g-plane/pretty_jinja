@@ -216,7 +216,13 @@ fn print_expr_with_operator(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
         node.children_with_tokens()
             .filter(|node_or_token| node_or_token.kind() != SyntaxKind::WHITESPACE)
             .map(|node_or_token| match node_or_token {
-                NodeOrToken::Node(node) => print_node(&node, ctx),
+                NodeOrToken::Node(node) => {
+                    if node.next_sibling().is_some() {
+                        print_node(&node, ctx)
+                    } else {
+                        print_node(&node, ctx).nest(ctx.indent_width)
+                    }
+                }
                 NodeOrToken::Token(token) => {
                     if token.kind() == SyntaxKind::OPERATOR {
                         let (prefix, suffix) = get_operator_space(ctx);
