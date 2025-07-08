@@ -62,7 +62,7 @@ fn number(input: &mut Input) -> GreenResult {
             opt((one_of(['e', 'E']), opt(one_of(['+', '-'])), unsigned_dec)),
         )
             .void(),
-        peek(none_of(is_ident_char)),
+        peek(alt((none_of(is_ident_char).void(), eof.void()))),
     )
         .take()
         .parse_next(input)
@@ -407,7 +407,7 @@ fn filters<'s>() -> impl Parser<Input<'s>, Vec<GreenElement>, ContextError> {
             opt(whitespace),
             (ident, opt((opt(whitespace), args))).map(|(ident, args)| {
                 let mut children = Vec::with_capacity(2);
-                children.push(ident);
+                children.push(node(SyntaxKind::EXPR_IDENT, [ident]));
                 if let Some((ws, mut args)) = args {
                     if let Some(ws) = ws {
                         children.push(ws);
