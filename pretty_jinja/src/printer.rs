@@ -81,10 +81,12 @@ fn print_expr_bin(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
 }
 
 fn print_expr_call(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
-    node.first_child()
+    let callee = node
+        .first_child()
         .map(|node| print_node(&node, ctx))
-        .unwrap_or_else(Doc::nil)
-        .append(print_comma_separated_with_delimiter(
+        .unwrap_or_else(Doc::nil);
+    if support::token(node, SyntaxKind::L_PAREN).is_some() {
+        callee.append(print_comma_separated_with_delimiter(
             node.children_with_tokens()
                 .skip_while(|node_or_token| node_or_token.kind() != SyntaxKind::L_PAREN),
             ctx,
@@ -92,6 +94,39 @@ fn print_expr_call(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
             ctx.options.args_prefer_single_line,
             ctx.options.args_paren_spacing,
         ))
+    } else {
+        callee
+            .append(Doc::text("("))
+            .append(if ctx.options.args_paren_spacing {
+                Doc::line_or_space()
+            } else {
+                Doc::line_or_nil()
+            })
+            .append(
+                node.first_child_by_kind(&|kind| kind == SyntaxKind::ARG)
+                    .map(|node| print_arg(&node, ctx))
+                    .unwrap_or_else(Doc::nil),
+            )
+            .append(
+                match ctx
+                    .options
+                    .args_trailing_comma
+                    .unwrap_or(ctx.options.trailing_comma)
+                {
+                    TrailingComma::Never => Doc::nil(),
+                    TrailingComma::Always => Doc::text(","),
+                    TrailingComma::OnlyMultiLine => Doc::flat_or_break(Doc::nil(), Doc::text(",")),
+                },
+            )
+            .nest(ctx.indent_width)
+            .append(if ctx.options.args_paren_spacing {
+                Doc::line_or_space()
+            } else {
+                Doc::line_or_nil()
+            })
+            .append(Doc::text(")"))
+            .group()
+    }
 }
 
 fn print_expr_concat(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
