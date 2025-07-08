@@ -42,7 +42,7 @@ fn print_node(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
         SyntaxKind::PARAM => print_param(node, ctx),
         SyntaxKind::STMT_CALL => todo!(),
         SyntaxKind::STMT_FILTER => print_stmt_filter(node, ctx),
-        SyntaxKind::STMT_FOR => todo!(),
+        SyntaxKind::STMT_FOR => print_stmt_for(node, ctx),
         SyntaxKind::STMT_MACRO => print_stmt_macro(node, ctx),
         SyntaxKind::STMT_SET => print_stmt_set(node, ctx),
         SyntaxKind::STMT_UNKNOWN => print_stmt_unknown(node, ctx),
@@ -246,6 +246,28 @@ fn print_stmt_filter(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
             ctx.options.params_prefer_single_line,
             ctx.options.params_paren_spacing,
         ))
+}
+
+fn print_stmt_for(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
+    Doc::list(
+        node.children_with_tokens()
+            .filter(|node_or_token| node_or_token.kind() != SyntaxKind::WHITESPACE)
+            .map(|node_or_token| match node_or_token {
+                NodeOrToken::Node(node) => print_node(&node, ctx),
+                NodeOrToken::Token(token) => match token.kind() {
+                    SyntaxKind::KEYWORD => match token.text() {
+                        "for" => Doc::text("for "),
+                        "recursive" => Doc::text(" recursive"),
+                        "if" => Doc::line_or_space().append(Doc::text("if ")),
+                        text => Doc::text(format!(" {text} ")),
+                    },
+                    SyntaxKind::COMMA => Doc::text(", "),
+                    _ => Doc::text(token.text().to_string()),
+                },
+            })
+            .collect(),
+    )
+    .group()
 }
 
 fn print_stmt_macro(node: &SyntaxNode, ctx: &Ctx) -> Doc<'static> {
