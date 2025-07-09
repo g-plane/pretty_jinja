@@ -1,3 +1,5 @@
+//! Types about configuration.
+
 #[cfg(feature = "config_serde")]
 use serde::{Deserialize, Serialize};
 
