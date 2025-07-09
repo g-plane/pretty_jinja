@@ -20,7 +20,7 @@ After adding the dprint plugins, update your `dprint.json` and add configuration
   // ...
   "plugins": [
     // ... other plugins URL
-    "https://plugins.dprint.dev/g-plane/pretty_jinja-v0.22.0.wasm"
+    "https://plugins.dprint.dev/g-plane/pretty_jinja-v0.1.0.wasm"
   ],
   "jinja": { // <-- the key name here is "jinja", not "pretty_jinja"
     // config comes here
