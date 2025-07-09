@@ -42,7 +42,7 @@ fn bool(input: &mut Input) -> GreenResult {
 }
 
 fn ident(input: &mut Input) -> GreenResult {
-    word.verify(|text| !matches!(text, "if" | "else" | "in" | "is"))
+    word.verify(|text| !matches!(text, "if" | "else" | "in" | "is" | "and" | "or" | "not"))
         .parse_next(input)
         .map(|text| tok(SyntaxKind::IDENT, text))
 }
