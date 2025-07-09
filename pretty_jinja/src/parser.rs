@@ -42,7 +42,8 @@ fn bool(input: &mut Input) -> GreenResult {
 }
 
 fn ident(input: &mut Input) -> GreenResult {
-    word.parse_next(input)
+    word.verify(|text| !matches!(text, "if" | "else" | "in" | "is"))
+        .parse_next(input)
         .map(|text| tok(SyntaxKind::IDENT, text))
 }
 fn word<'s>(input: &mut Input<'s>) -> winnow::Result<&'s str> {
