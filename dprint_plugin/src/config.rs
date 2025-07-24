@@ -1,13 +1,16 @@
-use dprint_core::configuration::{
-    ConfigKeyMap, ConfigurationDiagnostic, GlobalConfiguration, NewLineKind,
-    ResolveConfigurationResult, get_nullable_value, get_unknown_property_diagnostics, get_value,
+use dprint_core::{
+    configuration::{
+        ConfigKeyMap, ConfigurationDiagnostic, GlobalConfiguration, NewLineKind,
+        get_nullable_value, get_unknown_property_diagnostics, get_value,
+    },
+    plugins::{FileMatchingInfo, PluginResolveConfigurationResult},
 };
 use pretty_jinja::config::*;
 
 pub(crate) fn resolve_config(
     mut config: ConfigKeyMap,
     global_config: &GlobalConfiguration,
-) -> ResolveConfigurationResult<FormatOptions> {
+) -> PluginResolveConfigurationResult<FormatOptions> {
     let mut diagnostics = Vec::new();
     let pretty_jinja_config = FormatOptions {
         layout: LayoutOptions {
@@ -221,8 +224,15 @@ pub(crate) fn resolve_config(
 
     diagnostics.extend(get_unknown_property_diagnostics(config));
 
-    ResolveConfigurationResult {
+    PluginResolveConfigurationResult {
         config: pretty_jinja_config,
         diagnostics,
+        file_matching: FileMatchingInfo {
+            file_extensions: vec![
+                "markup-fmt-jinja-expr".into(),
+                "markup-fmt-jinja-stmt".into(),
+            ],
+            file_names: vec![],
+        },
     }
 }
