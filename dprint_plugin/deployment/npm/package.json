@@ -1,7 +1,7 @@
 {
   "name": "dprint-plugin-jinja",
   "description": "Pretty Jinja as dprint plugin.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "Pig Fang <g-plane@hotmail.com>",
   "repository": "g-plane/pretty_jinja",
   "license": "MIT",

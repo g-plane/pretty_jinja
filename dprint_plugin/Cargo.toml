@@ -1,6 +1,6 @@
 [package]
 name = "dprint_plugin_jinja"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 authors = ["Pig Fang <g-plane@hotmail.com>"]
 description = "pretty_jinja as dprint plugin."
